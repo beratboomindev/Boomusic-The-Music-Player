@@ -15,6 +15,13 @@
 
 ## Download / İndir
 
+**One-liner (önerilen):**
+```bash
+curl -fsSL https://github.com/beratboomindev/Boomusic-The-Music-Player/releases/download/v1.7.2/install-boomusic.sh | bash
+```
+Sistem bağımlılıklarını (GTK, VLC, WebKit) kurar, masaüstü girişi oluşturur, başlatır.
+
+**Manuel:**
 ```bash
 git clone https://github.com/beratboomindev/Boomusic-The-Music-Player.git
 cd Boomusic-The-Music-Player
