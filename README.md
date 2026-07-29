@@ -185,6 +185,12 @@ This project is licensed under the [MIT License](LICENSE) — free to use, modif
 
 Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır — kullanmak, değiştirmek ve dağıtmak serbesttir.
 
+## Contact / İletişim
+
+**EN:** Found a bug or have feedback? Reach me at **bertaboomin@proton.me**, or on Instagram [@beratboomindev](https://instagram.com/beratboomindev).
+
+**TR:** Bir şey mi buldun? Bana **bertaboomin@proton.me** adresinden ya da Instagram'dan [@beratboomindev](https://instagram.com/beratboomindev) üzerinden ulaşabilirsin.
+
 ---
 
 <div align="center">
