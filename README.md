@@ -11,7 +11,7 @@ A fast, native Linux music player that lives in your desktop *and* your system t
 [![Stars](https://img.shields.io/github/stars/beratboomindev/Boomusic-The-Music-Player?style=social)](https://github.com/beratboomindev/Boomusic-The-Music-Player/stargazers)
 [![Platform](https://img.shields.io/badge/platform-Linux-blue?logo=linux)](#platform-support)
 [![Python](https://img.shields.io/badge/python-3.x-blue?logo=python)](#installation--kurulum)
-[![License](https://img.shields.io/badge/license-add--one-lightgrey)](#)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 [English](#en--english) · [Türkçe](#tr--türkçe) · [Install](#download--i̇ndir) · [Features](#features)
 
@@ -181,7 +181,9 @@ Issues and pull requests are welcome — check [open issues](https://github.com/
 
 ## License / Lisans
 
-<!-- No license file currently detected in the repo — add one (MIT is a common, permissive choice for a project like this) so people know they're allowed to use/fork it. -->
+This project is licensed under the [MIT License](LICENSE) — free to use, modify, and distribute.
+
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır — kullanmak, değiştirmek ve dağıtmak serbesttir.
 
 ---
 
