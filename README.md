@@ -1,82 +1,92 @@
+<div align="center">
+
+<img src="https://github.com/beratboomindev/Boomusic-The-Music-Player/raw/main/src/boomusic/assets/icon.png" width="96" alt="Boomusic logo" />
+
 # Boomusic — The Music Player
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="src/boomusic/assets/icon.png">
-  <img src="src/boomusic/assets/icon.png" width="64" align="left" style="margin-right:16px">
-</picture>
+**No premium. No ads. No problems.**
+A fast, native Linux music player that lives in your desktop *and* your system tray.
 
-**Premium yok. Reklam yok. Dert yok.** Boomusic, Linux için yerel bir müzik çalar. Hem masaüstü penceresi hem de tepsi simgesi ile çalışır; pencereyi kapatsan da uygulama tepsiden devam eder.
+[![Latest Release](https://img.shields.io/github/v/release/beratboomindev/Boomusic-The-Music-Player?label=release&color=success)](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases)
+[![Stars](https://img.shields.io/github/stars/beratboomindev/Boomusic-The-Music-Player?style=social)](https://github.com/beratboomindev/Boomusic-The-Music-Player/stargazers)
+[![Platform](https://img.shields.io/badge/platform-Linux-blue?logo=linux)](#platform-support)
+[![Python](https://img.shields.io/badge/python-3.x-blue?logo=python)](#installation--kurulum)
+[![License](https://img.shields.io/badge/license-add--one-lightgrey)](#)
 
-<br clear="left">
+[English](#en--english) · [Türkçe](#tr--türkçe) · [Install](#download--i̇ndir) · [Features](#features)
 
-> No premium, no ads, no problems. Boomusic brings you a fast and smooth experience.
+</div>
 
 ---
 
+<!--
+  SCREENSHOT SPACE — this is the single highest-impact addition you can make.
+  Drop 1-3 images or a short GIF here (main window, tray menu, playlist view).
+  A visual music player with zero screenshots is a hard sell — people decide
+  in about 3 seconds whether to keep reading.
+
+  <p align="center">
+    <img src="docs/screenshot-main.png" width="800" alt="Boomusic main window" />
+  </p>
+-->
+
 ## Download / İndir
 
-**One-liner (önerilen):**
+**One-liner (recommended):**
+
 ```bash
 curl -fsSL https://github.com/beratboomindev/Boomusic-The-Music-Player/releases/download/v1.7.2/install-boomusic.sh | bash
 ```
-Sistem bağımlılıklarını (GTK, VLC, WebKit) kurar, masaüstü girişi oluşturur, başlatır.
 
-**Manuel:**
+Installs system dependencies (GTK, VLC, WebKit), creates a desktop entry, and launches Boomusic.
+
+**Manual:**
+
 ```bash
 git clone https://github.com/beratboomindev/Boomusic-The-Music-Player.git
 cd Boomusic-The-Music-Player
 bash install.sh
 ```
 
-Ya da [Releases](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases) sayfasından son sürümü indir.
+Or grab the latest build from the [Releases page](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases).
 
 ---
 
 ## EN — English
 
-### Introduction
-Boomusic doesn't need your money. No premium, no ads, no problems! 
-Boomusic brings you a fast and smooth experience.
+### Why Boomusic?
 
-### What Sets Boomusic Apart?
-No doubt. **Trust the process.**
+Most "free" music players eventually ask for money, show you ads, or lock features behind a paywall. Boomusic doesn't. It's a local-first player built for people who just want their music to play — fast, clean, and out of the way when you don't need it (thanks to the tray icon).
 
 ### Features
-- **YT-dlp Support** — Search, download, and play songs from YouTube directly in Boomusic.
-- **Drag-Drop Song** — Drag and drop audio files into your playlists. Manually set title and artist.
-- **Playlist Feature** — Create unlimited playlists with unlimited songs. Add custom cover images.
-- **Smart Shuffle** — Our shuffle algorithm ensures the same song won't play again until all songs in the playlist have been played. Once all songs have been played, the algorithm resets.
-- **Listening Statistics** — Boomusic tracks how many times and how long you've listened to each song.
-- **Only Songs Filter** — Toggle the ♪ button to show only audio files (mp3/flac/ogg/wav).
-- **Keyboard Shortcuts** — Space (play/pause), K (toggle now-playing panel), ←/→ (prev/next).
-- **i18n Language Support** — Switch between English (default) and Turkish in Settings.
-- **Font Selection** — Choose between DM Sans and Anthropic Serif.
-- **Automatic Startup** — Optionally start Boomusic in the background at boot.
-- **Just Icon Mode** — Control Boomusic solely through the system tray. *(Coming with 1.7.3)*
-- **Recommended for You** — Song suggestions based on your listening habits. *(Coming Soon)*
-- **Plugins** — Community plugins to extend functionality. *(Coming Soon)*
-- **Theme Customization** — Full visual customization. *(Coming Soon)*
 
-### Platform Support
-Currently Linux only. Windows and Android planned for v2.0.
-
-### Which AI models were used?
-At versions 0.1–1.5: **Claude Sonnet 5 Free Max**. 
-At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced the switch).
+| | |
+|---|---|
+| 🔎 **YT-dlp Support** | Search, download, and play songs from YouTube directly in Boomusic |
+| 🖱️ **Drag & Drop** | Drop audio files into playlists; edit title/artist manually |
+| 📁 **Unlimited Playlists** | Unlimited playlists, unlimited songs, custom cover art |
+| 🔀 **Smart Shuffle** | Won't repeat a song until every other track in the playlist has played |
+| 📊 **Listening Stats** | Tracks play count and total listening time per song |
+| 🎵 **Audio-only Filter** | One-click toggle to show only mp3/flac/ogg/wav files |
+| ⌨️ **Keyboard Shortcuts** | Space, K, arrow keys — see table below |
+| 🌐 **i18n** | English and Turkish, switchable in Settings |
+| 🔤 **Font Choice** | DM Sans or Anthropic Serif |
+| 🚀 **Autostart** | Optional background launch at boot |
+| 🧩 **Coming soon** | Icon-only mode (1.7.3), personalized recommendations, plugins, theming |
 
 ### Keyboard Shortcuts
 
 | Key | Function |
-|-----|----------|
-| Space | Play / Pause |
-| K | Toggle now-playing panel |
-| ← → | Previous / Next track |
-| Escape | Close search panel |
+|---|---|
+| `Space` | Play / Pause |
+| `K` | Toggle now-playing panel |
+| `←` `→` | Previous / Next track |
+| `Escape` | Close search panel |
 
 ### File Locations
 
 | What | Where |
-|------|-------|
+|---|---|
 | Music | `~/BooPlaylist` (configurable) |
 | Settings | `~/.config/boomusic/config.json` |
 | Statistics | `~/.local/share/boomusic/stats.json` |
@@ -84,46 +94,52 @@ At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced th
 | Program files | `~/.local/share/boomusic/install/` |
 | Launcher | `~/.local/bin/boomusic` |
 
+### Platform Support
+
+Currently **Linux only**. Windows and Android are planned for v2.0.
+
+### Built With
+
+Python · pywebview · libVLC · GTK · WebKit2GTK
+
 ---
 
 ## TR — Türkçe
 
-### Tanıtım
-**Boomusic'in paranıza ihtiyacı yok.** Reklam yok, premium veya başka saçmalıkları yok. Hızlı, akıcı ve kullanışlı bir deneyim sunar.
+### Neden Boomusic?
 
-### Farkımız Ne?
-Şüphe yok. Sonuca güven.
+Çoğu "ücretsiz" müzik çalar bir süre sonra sizden para ister, reklam gösterir ya da özellikleri kilitler. Boomusic bunu yapmaz. Sadece müziğinizin hızlı, sade ve gerektiğinde gözden kaybolarak (tepsi ikonu sayesinde) çalmasını isteyenler için tasarlanmış, yerel bir müzik çalar.
 
 ### Özellikler
-- **YT-dlp Desteği** — Boomusic içinden YouTube'da şarkı ara, indir ve çal.
-- **Sürükle-Bırak Şarkı** — Ses dosyasını playlist'e sürükle, adını ve sanatçısını manuel düzenle.
-- **Playlist Özelliği** — İstediğin kadar playlist oluştur, istediğin kadar şarkı ekle. Kapak resmi ata.
-- **Boomin Tarzı Karışık Çalma (Smart Shuffle)** — Aynı şarkı, playlist'teki diğer tüm şarkılar çalınmadan tekrar çalmaz. Tüm şarkılar çalındığında algoritma sıfırlanır.
-- **Dinleme İstatistikleri** — Hangi şarkıyı kaç kere ve kaç dakika dinlediğinin kaydı tutulur.
-- **Sadece Şarkılar Filtresi** — ♪ düğmesi ile playlist'te sadece ses dosyalarını göster (mp3/flac/ogg/wav).
-- **Klavye Kısayolları** — Space (oynat/duraklat), K (şimdi çalan paneli), ←/→ (önceki/sonraki).
-- **Dil Desteği (i18n)** — Ayarlar'dan İngilizce ve Türkçe arasında geçiş yap.
-- **Yazı Tipi Seçimi** — DM Sans veya Anthropic Serif arasında seçim yap.
-- **Otomatik Başlatma** — Bilgisayar açılırken Boomusic arka planda otomatik başlar.
-- **Sadece İkon Modu** — Sadece sistem tepsisi ikonu üzerinden yönetim. *(1.7.3 ile geliyor)*
-- **Sana Özel Öneriler** — Dinleme alışkanlıklarına göre şarkı önerileri. *(Yakında)*
-- **Eklentiler** — Topluluk pluginleri ile Boomusic'i kişiselleştir. *(Yakında)*
-- **Tema Özelleştirme** — Uygulama temasını baştan sona değiştir. *(Yakında)*
+
+| | |
+|---|---|
+| 🔎 **YT-dlp Desteği** | Boomusic içinden YouTube'da şarkı ara, indir ve çal |
+| 🖱️ **Sürükle-Bırak** | Ses dosyalarını playlist'e sürükle, ad/sanatçıyı manuel düzenle |
+| 📁 **Sınırsız Playlist** | Sınırsız playlist, sınırsız şarkı, özel kapak resmi |
+| 🔀 **Smart Shuffle** | Diğer tüm şarkılar çalınmadan aynı şarkı tekrar çalmaz |
+| 📊 **Dinleme İstatistikleri** | Her şarkı için çalma sayısı ve süresi kaydı |
+| 🎵 **Sadece Ses Filtresi** | Tek tıkla sadece mp3/flac/ogg/wav dosyalarını göster |
+| ⌨️ **Klavye Kısayolları** | Space, K, ok tuşları — aşağıdaki tabloya bakın |
+| 🌐 **Dil Desteği** | Ayarlar'dan İngilizce/Türkçe geçişi |
+| 🔤 **Yazı Tipi Seçimi** | DM Sans veya Anthropic Serif |
+| 🚀 **Otomatik Başlatma** | Açılışta arka planda opsiyonel başlatma |
+| 🧩 **Yakında** | Sadece ikon modu (1.7.3), kişisel öneriler, eklentiler, tema özelleştirme |
 
 ### Klavye Kısayolları
 
 | Tuş | İşlev |
-|-----|-------|
-| Space | Oynat / Duraklat |
-| K | Şimdi çalan panelini aç/kapat |
-| ← → | Önceki / Sonraki şarkı |
-| Escape | Arama panelini kapat |
+|---|---|
+| `Space` | Oynat / Duraklat |
+| `K` | Şimdi çalan panelini aç/kapat |
+| `←` `→` | Önceki / Sonraki şarkı |
+| `Escape` | Arama panelini kapat |
 
 ### Dosya Konumları
 
 | Ne | Nerede |
-|----|--------|
-| Müzik | `~/BooPlaylist` (Ayarlar'dan değiştirilebilir) |
+|---|---|
+| Müzik | `~/BooPlaylist` (değiştirilebilir) |
 | Ayarlar | `~/.config/boomusic/config.json` |
 | İstatistikler | `~/.local/share/boomusic/stats.json` |
 | Günlük | `~/.local/share/boomusic/boomusic.log` |
@@ -132,11 +148,11 @@ At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced th
 
 ---
 
-## Smart Shuffle / Smart Shuffle Nasıl Çalışır?
+## Smart Shuffle
 
-**EN:** One song cannot be selected again until every other song in the playlist has been played at least once. When all songs have been played, the round ends and the algorithm resets.
+**EN:** A song can't be selected again until every other song in the playlist has played at least once. Once the full round finishes, the algorithm resets.
 
-**TR:** Bir şarkı, playlist'teki diğer bütün şarkılar en az bir kez çalınmadan tekrar seçilemez. Tüm şarkılar çalındığında tur biter, algoritma sıfırlanır.
+**TR:** Bir şarkı, playlist'teki diğer tüm şarkılar en az bir kez çalınmadan tekrar seçilemez. Tur bittiğinde algoritma sıfırlanır.
 
 ---
 
@@ -146,15 +162,31 @@ At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced th
 bash install.sh
 ```
 
-The script will:
-1. Install required system packages (python-gobject, gtk3, webkit2gtk, vlc, etc.)
-2. Create a Python virtual environment
-3. Install Python dependencies (pystray, pillow, python-vlc, pywebview, mutagen)
-4. Copy application files
-5. Create launcher at `~/.local/bin/boomusic`
-6. Add to application menu
-7. Optionally enable autostart
+The script:
+
+1. Installs system packages (`python-gobject`, `gtk3`, `webkit2gtk`, `vlc`, etc.)
+2. Creates a Python virtual environment
+3. Installs Python dependencies (`pystray`, `pillow`, `python-vlc`, `pywebview`, `mutagen`)
+4. Copies application files
+5. Creates a launcher at `~/.local/bin/boomusic`
+6. Adds Boomusic to the application menu
+7. Optionally enables autostart
 
 ---
 
-*Built with Python, pywebview, libVLC, and ♥*
+## Contributing / Katkı
+
+<!-- Add a short paragraph: are PRs welcome? Any coding style / issue template expectations? -->
+Issues and pull requests are welcome — check [open issues](https://github.com/beratboomindev/Boomusic-The-Music-Player/issues) to get started.
+
+## License / Lisans
+
+<!-- No license file currently detected in the repo — add one (MIT is a common, permissive choice for a project like this) so people know they're allowed to use/fork it. -->
+
+---
+
+<div align="center">
+
+Built with Python, pywebview, libVLC, and ♥
+
+</div>
