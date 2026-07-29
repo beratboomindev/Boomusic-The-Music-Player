@@ -1,96 +1,81 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='64' y2='64'%3E%3Cstop offset='0' stop-color='%236C4AFF'/%3E%3Cstop offset='1' stop-color='%239C86FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='32' y='42' text-anchor='middle' fill='white' font-size='28' font-weight='bold' font-family='sans-serif'%3E♪%3C/text%3E%3C/svg%3E">
-  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='64' y2='64'%3E%3Cstop offset='0' stop-color='%236C4AFF'/%3E%3Cstop offset='1' stop-color='%239C86FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='32' y='42' text-anchor='middle' fill='white' font-size='28' font-weight='bold' font-family='sans-serif'%3E♪%3C/text%3E%3C/svg%3E" width="64" height="64" align="left" style="margin-right:16px">
-</picture>
-
 # Boomusic — The Music Player
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/boomusic/assets/icon.png">
+  <img src="src/boomusic/assets/icon.png" width="64" align="left" style="margin-right:16px">
+</picture>
 
 **Premium yok. Reklam yok. Dert yok.** Boomusic, Linux için yerel bir müzik çalar. Hem masaüstü penceresi hem de tepsi simgesi ile çalışır; pencereyi kapatsan da uygulama tepsiden devam eder.
 
+<br clear="left">
+
 > No premium, no ads, no problems. Boomusic brings you a fast and smooth experience.
+
+---
 
 ## Download / İndir
 
 ```bash
-git clone https://github.com/anomalyco/Boomusic.git
-cd Boomusic/boomusic_v1.7
+git clone https://github.com/beratboomindev/Boomusic-The-Music-Player.git
+cd Boomusic-The-Music-Player
 bash install.sh
 ```
 
-Ya da [Releases](https://github.com/anomalyco/Boomusic/releases) sayfasından son sürümü indir, içindeki `install.sh`'i çalıştır.
-
-## Features / Özellikler
-
-- **YT-dlp Desteği** — Boomusic içinden YouTube'da ara, indir, çal.
-- **Sürükle-Bırak Şarkı Ekle** — Ses dosyasını playlist'e sürükle, adını ve sanatçısını manuel düzenle.
-- **Playlist Yönetimi** — İstediğin kadar playlist oluştur, şarkı ekle/çıkar, kapak resmi ata.
-- **Akıllı Karıştırma (Smart Shuffle)** — Aynı şarkı tüm liste bitmeden tekrar çalmaz.
-- **Dinleme İstatistikleri** — Hangi şarkıyı kaç kere dinlediğinin kaydı tutulur.
-- **Sadece Şarkılar Filtresi** — ♪ düğmesi ile playlist'te sadece ses dosyalarını göster.
-- **i18n Dil Desteği** — İngilizce (varsayılan) ve Türkçe arasında geçiş yapılabilir.
-- **Yazı Tipi Seçimi** — DM Sans veya Anthropic Serif.
-- **Klavye Kısayolları** — Space (oynat/duraklat), K (panel aç/kapat), ←/→ (önceki/sonraki).
-- **Otomatik Başlatma** — İsteğe bağlı, bilgisayar açılırken arka planda başlar.
-- **Drag-Drop Song** — Drag and drop audio files into your playlists.
-- **Just Icon Mode** — *Coming with 1.7.3*
-- **Recommended to You** — *Coming Soon*
-- **Plugins** — *Coming Soon*
-- **Theme Customization** — *Coming Soon*
-
-## Smart Shuffle Nasıl Çalışır?
-
-Bir şarkı, playlist'teki diğer bütün şarkılar en az bir kez çalınmadan tekrar seçilemez. Tüm şarkılar çalındığında tur biter, algoritma sıfırlanır.
-
-## Kısayollar
-
-| Tuş | İşlev |
-|-----|-------|
-| Space | Oynat / Duraklat |
-| K | Şimdi çalan panelini aç/kapat |
-| ← → | Önceki / Sonraki şarkı |
-| Escape | Arama panelini kapat |
-
-## Dosya Konumları
-
-| Ne | Nerede |
-|---|---|
-| Müzik | `~/BooPlaylist` (değiştirilebilir) |
-| Ayarlar | `~/.config/boomusic/config.json` |
-| İstatistikler | `~/.local/share/boomusic/stats.json` |
-| Günlük | `~/.local/share/boomusic/boomusic.log` |
-
-## Desteklenen Sistemler
-
-Şu an için sadece Linux. v2.0 ile Windows ve Android planlanıyor.
-
-## Which AI models did I use?
-
-At 0.1–1.5: **Claude Sonnet 5 Free Max** — but its credit limit was too low so I switched to **DeepSeek Flash 4 Free OpenCode Zen** at version 1.7.
+Ya da [Releases](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases) sayfasından son sürümü indir.
 
 ---
 
 ## EN — English
 
 ### Introduction
-Boomusic doesn't need your money. No premium, no ads, no problems! Boomusic brings you a fast and smooth experience.
+Boomusic doesn't need your money. No premium, no ads, no problems! 
+Boomusic brings you a fast and smooth experience.
 
 ### What Sets Boomusic Apart?
 No doubt. **Trust the process.**
 
 ### Features
-- **Drag-Drop Song:** Drag and drop audio files into your playlist. Manually set title and artist.
-- **Just Icon Mode:** Control Boomusic solely through the system tray icon. *(Coming with 1.7.3)*
-- **YT-dlp Feature:** Search and download songs from YouTube via Boomusic.
-- **Recommended to You:** Boomusic suggests songs you might like. *(Coming Soon)*
-- **Playlist Feature:** Create as many playlists as you want, add as many songs as you want.
-- **Boomin's Shuffle:** Our shuffle algorithm ensures songs don't repeat until all have been played. *(Toggleable, coming with 1.8)*
-- **Automatic Startup:** App can start automatically in the background.
-- **Listening Data Collection:** Boomusic tracks play counts and listening time.
-- **Plugins:** Community plugins to customize Boomusic. *(Coming Soon)*
-- **Theme Customization:** Full theme customization. *(Coming Soon)*
+- **YT-dlp Support** — Search, download, and play songs from YouTube directly in Boomusic.
+- **Drag-Drop Song** — Drag and drop audio files into your playlists. Manually set title and artist.
+- **Playlist Feature** — Create unlimited playlists with unlimited songs. Add custom cover images.
+- **Smart Shuffle** — Our shuffle algorithm ensures the same song won't play again until all songs in the playlist have been played. Once all songs have been played, the algorithm resets.
+- **Listening Statistics** — Boomusic tracks how many times and how long you've listened to each song.
+- **Only Songs Filter** — Toggle the ♪ button to show only audio files (mp3/flac/ogg/wav).
+- **Keyboard Shortcuts** — Space (play/pause), K (toggle now-playing panel), ←/→ (prev/next).
+- **i18n Language Support** — Switch between English (default) and Turkish in Settings.
+- **Font Selection** — Choose between DM Sans and Anthropic Serif.
+- **Automatic Startup** — Optionally start Boomusic in the background at boot.
+- **Just Icon Mode** — Control Boomusic solely through the system tray. *(Coming with 1.7.3)*
+- **Recommended for You** — Song suggestions based on your listening habits. *(Coming Soon)*
+- **Plugins** — Community plugins to extend functionality. *(Coming Soon)*
+- **Theme Customization** — Full visual customization. *(Coming Soon)*
 
 ### Platform Support
 Currently Linux only. Windows and Android planned for v2.0.
+
+### Which AI models were used?
+At versions 0.1–1.5: **Claude Sonnet 5 Free Max**. 
+At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced the switch).
+
+### Keyboard Shortcuts
+
+| Key | Function |
+|-----|----------|
+| Space | Play / Pause |
+| K | Toggle now-playing panel |
+| ← → | Previous / Next track |
+| Escape | Close search panel |
+
+### File Locations
+
+| What | Where |
+|------|-------|
+| Music | `~/BooPlaylist` (configurable) |
+| Settings | `~/.config/boomusic/config.json` |
+| Statistics | `~/.local/share/boomusic/stats.json` |
+| Log | `~/.local/share/boomusic/boomusic.log` |
+| Program files | `~/.local/share/boomusic/install/` |
+| Launcher | `~/.local/bin/boomusic` |
 
 ---
 
@@ -103,17 +88,66 @@ Currently Linux only. Windows and Android planned for v2.0.
 Şüphe yok. Sonuca güven.
 
 ### Özellikler
-- **YT-dlp Desteği:** Boomusic içinden YouTube'dan şarkı indir ve ara.
-- **Sadece İkon Modu:** Sadece sistem tepsisi ikonu üzerinden yönetim. *(1.7.3 ile geliyor)*
-- **Sürükle-Bırak Şarkı:** Ses dosyasını playlist'e sürükle, adını ve sanatçısını düzenle.
-- **Senin için Öneriler:** Dinleme alışkanlıklarına göre şarkı önerileri. *(Yakında)*
-- **Playlist Özelliği:** İstediğin kadar playlist ve şarkı.
-- **Boomin Tarzı Karışık Çalma:** Aynı şarkı tekrar tekrar çalmaz. *(1.8 ile geliyor)*
-- **Kendiliğinden Başlatma:** Bilgisayar açılırken arka planda başlar.
-- **Tema Özelleştirme:** Baştan sona tema düzenleme. *(Yakında)*
-- **Dinleme Verisi Toplama:** Kaç kere ve kaç dakika dinlediğinin kaydı.
-- **Eklentiler:** Topluluk pluginleri. *(Yakında)*
+- **YT-dlp Desteği** — Boomusic içinden YouTube'da şarkı ara, indir ve çal.
+- **Sürükle-Bırak Şarkı** — Ses dosyasını playlist'e sürükle, adını ve sanatçısını manuel düzenle.
+- **Playlist Özelliği** — İstediğin kadar playlist oluştur, istediğin kadar şarkı ekle. Kapak resmi ata.
+- **Boomin Tarzı Karışık Çalma (Smart Shuffle)** — Aynı şarkı, playlist'teki diğer tüm şarkılar çalınmadan tekrar çalmaz. Tüm şarkılar çalındığında algoritma sıfırlanır.
+- **Dinleme İstatistikleri** — Hangi şarkıyı kaç kere ve kaç dakika dinlediğinin kaydı tutulur.
+- **Sadece Şarkılar Filtresi** — ♪ düğmesi ile playlist'te sadece ses dosyalarını göster (mp3/flac/ogg/wav).
+- **Klavye Kısayolları** — Space (oynat/duraklat), K (şimdi çalan paneli), ←/→ (önceki/sonraki).
+- **Dil Desteği (i18n)** — Ayarlar'dan İngilizce ve Türkçe arasında geçiş yap.
+- **Yazı Tipi Seçimi** — DM Sans veya Anthropic Serif arasında seçim yap.
+- **Otomatik Başlatma** — Bilgisayar açılırken Boomusic arka planda otomatik başlar.
+- **Sadece İkon Modu** — Sadece sistem tepsisi ikonu üzerinden yönetim. *(1.7.3 ile geliyor)*
+- **Sana Özel Öneriler** — Dinleme alışkanlıklarına göre şarkı önerileri. *(Yakında)*
+- **Eklentiler** — Topluluk pluginleri ile Boomusic'i kişiselleştir. *(Yakında)*
+- **Tema Özelleştirme** — Uygulama temasını baştan sona değiştir. *(Yakında)*
+
+### Klavye Kısayolları
+
+| Tuş | İşlev |
+|-----|-------|
+| Space | Oynat / Duraklat |
+| K | Şimdi çalan panelini aç/kapat |
+| ← → | Önceki / Sonraki şarkı |
+| Escape | Arama panelini kapat |
+
+### Dosya Konumları
+
+| Ne | Nerede |
+|----|--------|
+| Müzik | `~/BooPlaylist` (Ayarlar'dan değiştirilebilir) |
+| Ayarlar | `~/.config/boomusic/config.json` |
+| İstatistikler | `~/.local/share/boomusic/stats.json` |
+| Günlük | `~/.local/share/boomusic/boomusic.log` |
+| Program dosyaları | `~/.local/share/boomusic/install/` |
+| Başlatıcı | `~/.local/bin/boomusic` |
 
 ---
 
-*Built with Python, pywebview, and libVLC.*
+## Smart Shuffle / Smart Shuffle Nasıl Çalışır?
+
+**EN:** One song cannot be selected again until every other song in the playlist has been played at least once. When all songs have been played, the round ends and the algorithm resets.
+
+**TR:** Bir şarkı, playlist'teki diğer bütün şarkılar en az bir kez çalınmadan tekrar seçilemez. Tüm şarkılar çalındığında tur biter, algoritma sıfırlanır.
+
+---
+
+## Installation / Kurulum
+
+```bash
+bash install.sh
+```
+
+The script will:
+1. Install required system packages (python-gobject, gtk3, webkit2gtk, vlc, etc.)
+2. Create a Python virtual environment
+3. Install Python dependencies (pystray, pillow, python-vlc, pywebview, mutagen)
+4. Copy application files
+5. Create launcher at `~/.local/bin/boomusic`
+6. Add to application menu
+7. Optionally enable autostart
+
+---
+
+*Built with Python, pywebview, libVLC, and ♥*
