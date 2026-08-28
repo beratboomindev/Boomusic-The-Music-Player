@@ -185,6 +185,12 @@ The script will:
   playlists (each one expands to its tracks), rescan, open the music folder,
   *Boomusic'i Göster* (only if a GUI instance is also running), *Çıkış*.
 
+**Switching between them at runtime:** open *Settings → Sadece İkon Moduna
+Geç*. This launches a `boomusic-tray` instance in the background and hides
+the current window. The GUI process keeps running in the background (so
+the audio doesn't stop). To come back: click the *Boomusic'i Göster* item
+inside the new tray icon's menu.
+
 The two launchers run as **completely separate processes** with their own
 locks (`boomusic-gui.lock` and `boomusic-tray.lock`), so you can start both
 at the same time and they won't conflict. Each one has its own tray icon —
@@ -203,6 +209,11 @@ CLI equivalent: `python3 -m boomusic --tray-only` (or `-t`).
   çalma listeleri (her biri tıklanabilir şarkı listesi), yeniden tara,
   klasör aç, *Boomusic'i Göster* (yalnızca aynı anda bir GUI örneği de
   çalışıyorsa), *Çıkış*.
+
+**Çalışırken aralarında geçiş:** *Ayarlar → Sadece İkon Moduna Geç*. Bu
+buton arka planda bir `boomusic-tray` örneği başlatır ve pencereyi gizler.
+GUI süreci arka planda çalışmaya devam eder (ses kesilmez). Geri dönmek
+için yeni tepsi simgesinin menüsündeki *Boomusic'i Göster* öğesine tıkla.
 
 İki launcher **tamamen ayrı süreçlerdir** (kendi lock dosyaları:
 `boomusic-gui.lock`, `boomusic-tray.lock`), aynı anda çalıştırılabilirler.

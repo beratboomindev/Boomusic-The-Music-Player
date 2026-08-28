@@ -17,6 +17,7 @@ import base64
 import logging
 import os
 import shutil
+import subprocess
 import threading
 from pathlib import Path
 from typing import Optional
@@ -324,6 +325,46 @@ class JsApi:
             except Exception:
                 logger.exception("Pencere kapatılamadı (quit_app)")
         threading.Timer(4.0, lambda: os._exit(0)).start()
+
+    def enter_just_icon_mode(self) -> bool:
+        """Ayarlar panelindeki 'Sadece İkon Moduna Geç' butonu için:
+        'boomusic-tray' launcher'ını arka planda başlatır ve GUI penceresini
+        gizler (kapatmaz; 'Boomusic'i Göster' denince tekrar açılabilir).
+        İki süreç AYNI ANDA çalışır -- farklı lock dosyaları kullanırlar,
+        birbirlerini engellemez. Just Icon örneği zaten çalışıyorsa hiçbir
+        şey yapmaz (kullanıcıya 'zaten çalışıyor' mesajı döner).
+        """
+        launcher = os.path.expanduser("~/.local/bin/boomusic-tray")
+        if not os.path.isfile(launcher):
+            logger.error("boomusic-tray launcher bulunamadı: %s", launcher)
+            return False
+        try:
+            # setsid ile yeni oturum; pywebview'in ana thread'ini bloklamaz.
+            # Standart çıktılar /dev/null'a yönlendirilir (tray kendi logunu
+            # boomusic.log'a yazar). Nohup gerekmez çünkü setsid yeterli.
+            subprocess.Popen(
+                [launcher],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except Exception:
+            logger.exception("boomusic-tray başlatılamadı")
+            return False
+        # Kısa bir gecikme: Just Icon instance'ının lock dosyasını oluşturup
+        # tek-örnek kontrolünü geçmesine fırsat ver. Yoksa arka arkaya
+        # tıklamalarda kullanıcı iki Just Icon örneği başlatabilir.
+        threading.Timer(0.5, self._hide_after_just_icon_launch).start()
+        return True
+
+    def _hide_after_just_icon_launch(self) -> None:
+        """enter_just_icon_mode'tan yarım saniye sonra GUI'yi gizle."""
+        if self.window is not None:
+            try:
+                self.window.hide()
+            except Exception:
+                logger.exception("Pencere gizlenemedi (just_icon_mode)")
 
     def pick_music_folder(self) -> Optional[str]:
         if self.window is None:

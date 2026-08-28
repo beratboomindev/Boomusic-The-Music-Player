@@ -887,6 +887,7 @@
         </select>
       </div>
       <div class="modal-footer" style="margin-top:8px;">
+        <button class="modal-btn" id="btnEnterJustIcon">Sadece İkon Moduna Geç</button>
         <button class="modal-btn danger" id="btnQuitApp">Boomusic'ten Çık</button>
       </div>
     </div>
@@ -998,6 +999,8 @@
       language_label: 'Dil',
       only_songs: 'Sadece şarkılar',
       quit_app: 'Boomusic\'ten Çık',
+      enter_just_icon: 'Sadece İkon Moduna Geç',
+      enter_just_icon_hint: 'Pencere kapanır, kontrol tepsi simgesine geçer. Geri dönmek için tepsi menüsünden "Boomusic\'i Göster".',
       downloading: '⬇ İndiriliyor',
       new_playlist: 'Yeni Çalma Listesi',
       edit_playlist: 'Çalma Listesini Düzenle',
@@ -1060,6 +1063,8 @@
       language_label: 'Language',
       only_songs: 'Only songs',
       quit_app: 'Quit Boomusic',
+      enter_just_icon: 'Switch to Just Icon Mode',
+      enter_just_icon_hint: 'The window closes; control moves to the tray icon. To return, use "Show Boomusic" in the tray menu.',
       downloading: '⬇ Downloading',
       new_playlist: 'New Playlist',
       edit_playlist: 'Edit Playlist',
@@ -1118,6 +1123,10 @@
     if (el=document.getElementById('lblFont')) el.textContent = L.font_label;
     if (el=document.getElementById('lblLanguage')) el.textContent = L.language_label;
     if (el=document.getElementById('btnQuitApp')) el.textContent = L.quit_app;
+    if (el=document.getElementById('btnEnterJustIcon')){
+      el.textContent = L.enter_just_icon;
+      el.title = L.enter_just_icon_hint;
+    }
     if (el=document.getElementById('lblDownloading')) el.textContent = L.downloading;
     if (el=document.getElementById('lblPlName')) el.textContent = L.name_label;
     if (el=document.getElementById('lblPlDesc')) el.textContent = L.desc_label;
@@ -1795,6 +1804,25 @@
       window.pywebview.api.toggle_nowplaying_panel();
     });
     document.getElementById('btnQuitApp').addEventListener('click', function(){ window.pywebview.api.quit_app(); });
+    document.getElementById('btnEnterJustIcon').addEventListener('click', function(){
+      // Python tarafı: setsid ile boomusic-tray'ı arka planda başlatır,
+      // 0.5 sn sonra GUI'yi gizler. Geri dönmek için yeni tray simgesinde
+      // 'Boomusic'i Göster' öğesine tıklamak yeterli.
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = currentLang === 'tr' ? 'Başlatılıyor...' : 'Launching...';
+      window.pywebview.api.enter_just_icon_mode().then(function(ok){
+        if (!ok){
+          btn.disabled = false;
+          // Metni geri al
+          btn.textContent = currentLang === 'tr' ? 'Sadece İkon Moduna Geç' : 'Switch to Just Icon Mode';
+          if (window.pywebview && window.pywebview.api && window.pywebview.api.notify){
+            try { window.pywebview.api.notify('Boomusic', 'boomusic-tray başlatılamadı (~/.local/bin/boomusic-tray eksik).'); } catch(_) {}
+          }
+        }
+        // Başarılıysa pencere kapanacak; butona gerek kalmadı.
+      });
+    });
 
     document.getElementById('btnSearch').addEventListener('click', doSearch);
      document.addEventListener('keydown', function(e){
