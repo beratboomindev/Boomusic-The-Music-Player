@@ -176,17 +176,20 @@ def main(argv: Optional[list] = None) -> int:
     try:
         from .tray import Tray
 
-        # --tray-only modunda menü SADE tutulur: sadece (GUI varsa)
-        # 'Boomusic'i Göster' + 'Çıkış'. Bu launcher'ın kullanım amacı
-        # 'ben zaten başka yerde kontrol ediyorum, sadece sistem tepsisinde
-        # görünsün ve gerekirse kapayabileyim' olduğu için tüm menü
-        # özellikleri gereksizdir.
-        tray = Tray(app, gui=gui, minimal=tray_only)
+        # Menü modu launcher'a göre değişir:
+        #   - GUI modu (rich_menu=False): sadece 'Göster' + 'Çık' — kullanıcı
+        #     her şeyi pencereden kontrol eder, tray'de tekrarlı özellik istemez.
+        #   - Just Icon modu (rich_menu=True): zengin menü — pencere yok,
+        #     menü TÜM kontrol arayüzüdür (oynat/duraklat, ses, playlist'ler).
+        tray = Tray(app, gui=gui, rich_menu=tray_only)
         # GUI modunda: tray menüsündeki 'Boomusic'i Göster' öğesi bu callback'i
         # çağırarak pencereyi gösterir.
         if gui is not None:
             tray.set_show_window_callback(gui.show)
-        logger.info("[4/5] Tray() oluşturuldu (simge HENÜZ görünmüyor, bu normal; menü modu: %s).", "minimal" if tray_only else "zengin")
+        logger.info(
+            "[4/5] Tray() oluşturuldu (simge HENÜZ görünmüyor, bu normal; menü: %s).",
+            "zengin (Just Icon)" if tray_only else "sade (GUI)",
+        )
     except Exception:
         logger.exception(
             "[4/5] Tray() oluşturulamadı. Masaüstü ortamınızda AppIndicator/"

@@ -173,38 +173,41 @@ The script will:
 
 ## Just Icon Mode / Sadece İkon Modu
 
-**EN:** Just Icon Mode is a **separate, independent launcher** —
-`boomusic-tray` (or the *Boomusic (Sadece İkon)* entry in your app menu).
-It opens a tray icon but **no window at all**. The tray menu is intentionally
-**minimal** — just two items:
+**EN:** The two launchers have **different** tray menus — by design.
 
-- **Boomusic'i Göster** (only if a GUI instance is also running; otherwise hidden)
-- **Çıkış** (quit the tray)
+- **`boomusic`** (GUI): opens the main window. The tray menu is intentionally
+  **minimal** — only two items: *Boomusic'i Göster* + *Çıkış*. While the
+  window is open, the user controls everything from there; a rich tray menu
+  on top of a full GUI would be redundant.
+- **`boomusic-tray`** (Just Icon, `--tray-only`): opens **no** window. The
+  tray icon is the entire interface and the menu is **rich**: now-playing
+  title, play/pause, next/previous, shuffle, volume presets + ±5 + mute,
+  playlists (each one expands to its tracks), rescan, open the music folder,
+  *Boomusic'i Göster* (only if a GUI instance is also running), *Çıkış*.
 
-That is the whole menu. There is no play/pause, no volume, no playlists inside
-it. The idea is: if you want a tray icon, you probably already have another way
-to control the music (the GUI, an MPRIS-aware media key, etc.), so the tray's
-job is only to "be visible so the app can be quit". The full GUI and Just Icon
-**run as two completely separate processes** with their own locks
-(`boomusic-gui.lock` and `boomusic-tray.lock`), so you can start both at the
-same time and they won't conflict.
+The two launchers run as **completely separate processes** with their own
+locks (`boomusic-gui.lock` and `boomusic-tray.lock`), so you can start both
+at the same time and they won't conflict. Each one has its own tray icon —
+this is intentional: whoever launched it is in control of that icon.
 
 CLI equivalent: `python3 -m boomusic --tray-only` (or `-t`).
 
-**TR:** Sadece İkon Modu, **ayrı ve bağımsız bir başlatıcıdır** —
-`boomusic-tray` (veya uygulama menüsündeki *Boomusic (Sadece İkon)*
-girdisi). Bir tepsi simgesi açar ama **pencere hiç açılmaz**. Tepsi menüsü
-kasıtlı olarak **sade** tutulmuştur — sadece iki öğe:
+**TR:** İki launcher'ın tray menüleri farklıdır — bu tasarım kararıdır.
 
-- **Boomusic'i Göster** (yalnızca aynı anda bir GUI örneği de çalışıyorsa görünür)
-- **Çıkış** (tray'i kapat)
+- **`boomusic`** (GUI): ana pencereyi açar. Tray menüsü kasıtlı olarak
+  **sade** — sadece iki öğe: *Boomusic'i Göster* + *Çıkış*. Pencere açıkken
+  kullanıcı her şeyi oradan kontrol eder; zengin tray menüsü tekrardır.
+- **`boomusic-tray`** (Just Icon, `--tray-only`): **pencere açmaz**. Tepsi
+  simgesi TÜM arayüzdür ve menü **zengin** olur: şu an çalan başlığı,
+  oynat/duraklat, sonraki/önceki, karıştır, ses preset'leri + ±5 + sustur,
+  çalma listeleri (her biri tıklanabilir şarkı listesi), yeniden tara,
+  klasör aç, *Boomusic'i Göster* (yalnızca aynı anda bir GUI örneği de
+  çalışıyorsa), *Çıkış*.
 
-Menüde oynat/duraklat, ses, playlist YOK. Fikir şu: tepsi simgesi istiyorsan
-muhtemelen müziği başka bir yerden (GUI, MPRIS medya tuşları vb.) kontrol
-ediyorsundur; tray'in işi sadece "uygulama görünür olsun ve kapatılabilsin".
-**GUI ve Just Icon tamamen ayrı süreçlerdir** (kendi lock dosyaları:
-`boomusic-gui.lock`, `boomusic-tray.lock`), aynı anda çalıştırılabilirler
-ve birbirleriyle çakışmazlar.
+İki launcher **tamamen ayrı süreçlerdir** (kendi lock dosyaları:
+`boomusic-gui.lock`, `boomusic-tray.lock`), aynı anda çalıştırılabilirler.
+Her birinin kendi tray simgesi olur — bu kasıtlıdır: simgeyi kim başlattıysa
+onun kontrolündedir.
 
 CLI eşdeğeri: `python3 -m boomusic --tray-only` (veya `-t`).
 

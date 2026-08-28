@@ -5,16 +5,18 @@ Bu modül SADECE sunum/menü inşası ile ilgilenir; tüm iş mantığı
 olmasa/çalışmasa bile bağımsız test edilebilir.
 
 == İki başlatma modu ==
-Uygulama iki şekilde başlatılabilir:
-1) ``boomusic``          → GUI pencere + zengin tray menüsü (normal kullanım).
-2) ``boomusic-tray``     → sadece tray menüsü (Just Icon Mode; minimal:
-                           sadece 'Göster' + 'Çıkış'; CLI: ``--tray-only``).
+Uygulama iki şekilde başlatılabilir; her birinin tray menüsü farklıdır:
+1) ``boomusic``          → GUI pencere + SADE tray menüsü ("Göster"+"Çık").
+                           Kullanıcı her şeyi pencereden kontrol eder; tray
+                           sadece "görünür olsun ve kapatılabilsin" işi yapar.
+2) ``boomusic-tray``     → sadece tray simgesi, ZENGİN menü (oynat/duraklat,
+                           ses, playlist'ler, vs.). Pencere hiç açılmaz; menü
+                           TÜM kontrol arayüzüdür (CLI: ``--tray-only``).
 
-İki mod AYNI anda çalışabilir (farklı lock dosyaları kullanılır). Just Icon
-modundaki menü sade tutulmuştur: tam kontrol GUI veya MPRIS medya tuşları
-üzerinden yapılır; tray'in işi sadece "uygulama görünür olsun ve gerekirse
-kapatılabilsin"dir. Eğer GUI aynı anda çalışıyorsa menüde 'Göster' öğesi de
-bulunur (penceresi var demektir), yoksa sadece 'Çıkış' görünür.
+İki mod AYNI anda çalışabilir (farklı lock dosyaları). Her birinin kendi
+tray simgesi olur; bu kasıtlıdır — kullanıcı bilinçli olarak ikisini de
+başlatmış demektir. Sadece birini kullanmak istiyorsanız diğerini
+başlatmayın.
 
 NOT: Bu dosyanın çalışması için bir masaüstü ortamı (X11/Wayland) ve o
 ortamda bir sistem tepsisi barındırıcısı (KDE Plasma, GNOME + eklenti,
@@ -49,16 +51,21 @@ def _load_icon_image() -> Image.Image:
 
 
 class Tray:
-    def __init__(self, app: App, gui=None, minimal: bool = False):
+    def __init__(self, app: App, gui=None, rich_menu: bool = False):
+        """Tepsi simgesi ve menüsünü oluşturur.
+
+        rich_menu=False (varsayılan, GUI modu):
+            SADE menü: sadece 'Boomusic'i Göster' (gui varsa) + 'Çıkış'.
+            Mantık: GUI açıkken kullanıcı her şeyi pencereden kontrol eder;
+            tray menüsünü zengin tutmak tekrardır (pencere zaten orada).
+
+        rich_menu=True (Just Icon modu, --tray-only):
+            ZENGİN menü: oynat/duraklat, ses, playlist'ler, karıştır,
+            yeniden tara, vs. Pencere yok; menü TÜM kontrol arayüzüdür.
+        """
         self.app = app
         self.gui = gui
-        # minimal=True ise menü SADE şu iki öğeden oluşur:
-        #   - "Boomusic'i Göster" (sadece GUI modunda; Just Icon'da yok)
-        #   - "Çıkış"
-        # Bu, Just Icon Mode launcher'ı (boomusic-tray) için tasarlandı:
-        # kullanıcı zaten diğer uçbirimde (komut satırı, başka uygulama)
-        # kontrol ediyor olabilir, menüdeki tüm özellikler gerekmez.
-        self._minimal = minimal
+        self._rich_menu = rich_menu
         # Normal modda "Boomusic'i Göster" menü öğesi bu callback'i çağırır.
         # Just Icon Mode'da (gui=None) bu callback tanımsız kalır ve menüde
         # "Göster" öğesi gösterilmez.
@@ -223,17 +230,19 @@ class Tray:
     def _build_menu(self) -> pystray.Menu:
         """Menü moduna göre iki farklı şekilde oluşturulur.
 
-        Normal mod (minimal=False): zengin menü — oynat/duraklat, ses,
-        playlist'ler, vs. + (GUI varsa) "Boomusic'i Göster".
+        rich_menu=False (GUI modu, varsayılan): SADE menü — sadece
+            (GUI varsa) 'Boomusic'i Göster' + 'Çıkış'. Mantık: GUI açıkken
+            kullanıcı her şeyi pencereden kontrol eder; tray menüsünü
+            zengin tutmak tekrardır.
 
-        Minimal mod (minimal=True): sadece 2 öğe — (GUI varsa)
-        "Boomusic'i Göster" + "Çıkış". Bu, Just Icon Mode launcher'ı
-        (boomusic-tray) için: kullanıcı GUI'yi başka yerde yönetiyor,
-        menüde fazla özellik gerekmez.
+        rich_menu=True (Just Icon modu): ZENGİN menü — oynat/duraklat,
+            ses, playlist'ler, karıştır, yeniden tara, vs. Pencere yok;
+            menü TÜM kontrol arayüzüdür. (GUI aynı anda çalışıyorsa
+            'Boomusic'i Göster' öğesi de burada görünür.)
         """
         items: List = []
-        if self._minimal:
-            # === MİNİMAL MENÜ (Just Icon Mode) ===
+        if not self._rich_menu:
+            # === SADE MENÜ (GUI modu) ===
             if self._show_window_cb is not None or self.gui is not None:
                 items.append(pystray.MenuItem(
                     "Boomusic'i Göster", self._on_show_window, default=True
@@ -241,7 +250,7 @@ class Tray:
             items.append(pystray.MenuItem("Çıkış", self._on_quit))
             return pystray.Menu(*items)
 
-        # === ZENGİN MENÜ (GUI modu) ===
+        # === ZENGİN MENÜ (Just Icon modu) ===
         items.append(pystray.MenuItem(self._now_playing_text(), None, enabled=False))
         items.append(pystray.Menu.SEPARATOR)
         items.append(pystray.MenuItem("⏯  Oynat / Duraklat", self._on_play_pause))
@@ -262,6 +271,8 @@ class Tray:
         items.append(pystray.MenuItem("🔄  Yeniden Tara", self._on_rescan))
         items.append(pystray.MenuItem("📁  Müzik Klasörünü Aç", self._on_open_music_folder))
         if self._show_window_cb is not None or self.gui is not None:
+            # GUI örneği de çalışıyorsa 'Göster' öğesi ekle; yoksa Just Icon
+            # modunda gösterecek pencere olmadığı için bu öğe gizlenir.
             items.append(pystray.Menu.SEPARATOR)
             items.append(pystray.MenuItem("🪟  Boomusic'i Göster", self._on_show_window, default=True))
         items.append(pystray.Menu.SEPARATOR)
