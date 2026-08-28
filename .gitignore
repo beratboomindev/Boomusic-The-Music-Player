@@ -1,0 +1,6 @@
+src/boomusic.tar.gz
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
