@@ -436,6 +436,7 @@
     cursor: pointer; transition: background 0.2s ease, transform 0.2s ease;
     border: none; background: transparent; width: calc(100% - 8px);
     text-align: left; color: var(--text);
+    user-select: none; -webkit-user-select: none;
   }
   .track-row.showing-count {
     grid-template-columns: 32px 1fr 48px;
@@ -751,6 +752,97 @@
   /* Toast */
   .toast { position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%); background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; font-size: 13px; color: var(--text); box-shadow: var(--shadow); z-index: 30; animation: fadeIn 0.2s ease; pointer-events: none; }
 
+  /* Context menu — sağ tık menüsü.
+   * Signature: sol kenarda 2px gradient strip + 220px genişlik, açılırken
+   * clip-path ile 90ms'lik hafif bir "açılıyor" animasyonu. Destructive
+   * (sil) item'ları sağa hizalanmış "kırmızı" yerine normal renkte,
+   * yalnızca hover'da kırmızıya dönüşür -- "emin ol, tıklayınca kırmızı
+   * olur" yaklaşımı. */
+  .ctx-menu {
+    position: fixed;
+    z-index: 100;
+    min-width: 220px;
+    max-width: 280px;
+    background: rgba(18, 18, 28, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+    display: none;
+    overflow: hidden;
+    animation: ctxMenuIn 0.12s cubic-bezier(0.2, 0.7, 0.3, 1);
+    transform-origin: top left;
+  }
+  .ctx-menu.is-open { display: block; }
+  @keyframes ctxMenuIn {
+    from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .ctx-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 7px 10px 7px 14px;
+    border: none; background: transparent;
+    color: var(--text); font-size: 13px; font-weight: 500;
+    text-align: left; cursor: pointer; border-radius: 5px;
+    position: relative; line-height: 1.2;
+    transition: background 0.08s ease, color 0.08s ease;
+  }
+  .ctx-item:hover { background: var(--bg-hover); }
+  .ctx-item::before {
+    content: ''; position: absolute; left: 0; top: 4px; bottom: 4px;
+    width: 2px; border-radius: 2px; background: transparent;
+    transition: background 0.08s ease;
+  }
+  .ctx-item:hover::before { background: var(--accent-2); }
+  .ctx-item.is-danger { color: var(--text); }
+  .ctx-item.is-danger:hover { color: var(--red); background: rgba(255, 92, 92, 0.08); }
+  .ctx-item.is-danger:hover::before { background: var(--red); }
+  .ctx-item-icon {
+    width: 14px; height: 14px; flex-shrink: 0;
+    color: var(--text-muted); stroke: currentColor; fill: none;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ctx-item:hover .ctx-item-icon { color: currentColor; }
+  .ctx-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ctx-item-kbd {
+    font-size: 10px; color: var(--text-dim);
+    background: var(--bg); padding: 2px 6px; border-radius: 3px;
+    font-family: var(--font-body); font-weight: 500;
+  }
+  .ctx-sep {
+    height: 1px; background: var(--border); margin: 5px 8px;
+  }
+  .ctx-submenu {
+    position: relative;
+  }
+  .ctx-submenu-arrow {
+    margin-left: auto; width: 10px; height: 10px; color: var(--text-dim);
+  }
+  .ctx-submenu-panel {
+    position: absolute; left: 100%; top: 0;
+    min-width: 200px; max-height: 320px; overflow-y: auto;
+    background: rgba(18, 18, 28, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+    display: none;
+  }
+  .ctx-submenu:hover .ctx-submenu-panel { display: block; }
+  .ctx-header {
+    padding: 6px 12px 4px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-dim);
+  }
+  .ctx-empty {
+    padding: 10px 12px; font-size: 12px; color: var(--text-dim);
+    text-align: center; font-style: italic;
+  }
+
 </style>
 </head>
 <body>
@@ -960,6 +1052,9 @@
     </div>
   </div>
 
+  <!-- Context Menu (sağ tık) — JS tarafından dinamik doldurulur. -->
+  <div class="ctx-menu" id="ctxMenu" role="menu"></div>
+
 <script>
 (function(){
   var state = null, selectedPlaylist = null;
@@ -1001,6 +1096,27 @@
       quit_app: 'Boomusic\'ten Çık',
       enter_just_icon: 'Sadece İkon Moduna Geç',
       enter_just_icon_hint: 'Pencere kapanır, kontrol tepsi simgesine geçer. Geri dönmek için tepsi menüsünden "Boomusic\'i Göster".',
+      // Context menu
+      ctx_play: 'Çal',
+      ctx_play_next: 'Sıradaki olarak çal',
+      ctx_play_next_hint: 'Çalınıyor... (kuyruktaki sıra: shuffle tarafından yönetilir)',
+      ctx_copy_path: 'Dosya yolunu kopyala',
+      ctx_copy_link: 'YouTube bağlantısını kopyala',
+      ctx_copied: 'Pano\'ya kopyalandı',
+      ctx_copy_failed: 'Pano\'ya kopyalanamadı',
+      ctx_add_to_playlist: 'Şu playliste ekle',
+      ctx_added_to: 'Eklendi:',
+      ctx_no_playlists: 'Başka playlist yok',
+      ctx_show_file: 'Dosyayı göster',
+      ctx_remove_from_device: 'Cihazdan kaldır',
+      ctx_remove_confirm: 'Bu şarkıyı diskten silmek istediğine emin misin?',
+      ctx_removed: 'Şarkı silindi',
+      ctx_open: 'Aç',
+      ctx_rename: 'Yeniden adlandır',
+      ctx_shuffle: 'Karıştır ve çal',
+      ctx_delete_playlist: 'Playlisti sil',
+      ctx_delete_playlist_confirm: 'Bu playlist ve içindeki TÜM şarkılar silinecek. Emin misin?',
+      ctx_playlist_deleted: 'Playlist silindi',
       downloading: '⬇ İndiriliyor',
       new_playlist: 'Yeni Çalma Listesi',
       edit_playlist: 'Çalma Listesini Düzenle',
@@ -1065,6 +1181,27 @@
       quit_app: 'Quit Boomusic',
       enter_just_icon: 'Switch to Just Icon Mode',
       enter_just_icon_hint: 'The window closes; control moves to the tray icon. To return, use "Show Boomusic" in the tray menu.',
+      // Context menu
+      ctx_play: 'Play',
+      ctx_play_next: 'Play next',
+      ctx_play_next_hint: 'Playing… (queue order is managed by shuffle)',
+      ctx_copy_path: 'Copy file path',
+      ctx_copy_link: 'Copy YouTube link',
+      ctx_copied: 'Copied to clipboard',
+      ctx_copy_failed: 'Could not copy to clipboard',
+      ctx_add_to_playlist: 'Add to playlist',
+      ctx_added_to: 'Added to:',
+      ctx_no_playlists: 'No other playlists',
+      ctx_show_file: 'Show in file manager',
+      ctx_remove_from_device: 'Remove from device',
+      ctx_remove_confirm: 'Delete this track from disk?',
+      ctx_removed: 'Track removed',
+      ctx_open: 'Open',
+      ctx_rename: 'Rename',
+      ctx_shuffle: 'Shuffle and play',
+      ctx_delete_playlist: 'Delete playlist',
+      ctx_delete_playlist_confirm: 'This playlist and ALL its tracks will be deleted. Continue?',
+      ctx_playlist_deleted: 'Playlist deleted',
       downloading: '⬇ Downloading',
       new_playlist: 'New Playlist',
       edit_playlist: 'Edit Playlist',
@@ -1169,6 +1306,351 @@
     el.textContent = msg;
     document.body.appendChild(el);
     setTimeout(function(){ el.remove(); }, 2000);
+  }
+
+  // ====== Context menu (sağ tık) ============================================
+  // Declarative: openContextMenu([{icon, label, kbd?, danger?, onClick, submenu?}])
+  //   - submenu varsa o item'ın yanına açılır (hover'da).
+  //   - x/y viewport koordinatı; menü ekrana sığmazsa otomatik kaydırılır.
+  var ctxMenuEl = null;  // lazy init: ilk çağrıda DOM'dan alınır
+
+  function buildContextMenuDOM(items) {
+    var frag = document.createDocumentFragment();
+    items.forEach(function(it){
+      if (it.sep){
+        var s = document.createElement('div');
+        s.className = 'ctx-sep';
+        frag.appendChild(s);
+        return;
+      }
+      if (it.header){
+        var h = document.createElement('div');
+        h.className = 'ctx-header';
+        h.textContent = it.header;
+        frag.appendChild(h);
+        return;
+      }
+      if (it.empty){
+        var e = document.createElement('div');
+        e.className = 'ctx-empty';
+        e.textContent = it.empty;
+        frag.appendChild(e);
+        return;
+      }
+      if (it.submenu){
+        // Üst item: tıklanamaz, sadece hover'da submenu açılır
+        var wrap = document.createElement('div');
+        wrap.className = 'ctx-submenu';
+        var btn = document.createElement('button');
+        btn.className = 'ctx-item';
+        btn.type = 'button';
+        if (it.danger) btn.classList.add('is-danger');
+        if (it.disabled) btn.setAttribute('disabled', '');
+        btn.innerHTML = (it.icon ? '<svg class="ctx-item-icon" viewBox="0 0 24 24">'+it.icon+'</svg>' : '')
+          + '<span class="ctx-item-label">'+escapeHtml(it.label)+'</span>'
+          + '<svg class="ctx-item-icon ctx-submenu-arrow" viewBox="0 0 24 24"><polyline points="9,6 15,12 9,18"/></svg>';
+        wrap.appendChild(btn);
+        // Submenu panelini oluştur
+        var panel = document.createElement('div');
+        panel.className = 'ctx-submenu-panel';
+        buildSubmenuPanel(panel, it.submenu);
+        wrap.appendChild(panel);
+        frag.appendChild(wrap);
+        return;
+      }
+      var btn = document.createElement('button');
+      btn.className = 'ctx-item';
+      btn.type = 'button';
+      if (it.danger) btn.classList.add('is-danger');
+      if (it.disabled) btn.setAttribute('disabled', '');
+      btn.innerHTML = (it.icon ? '<svg class="ctx-item-icon" viewBox="0 0 24 24">'+it.icon+'</svg>' : '')
+        + '<span class="ctx-item-label">'+escapeHtml(it.label)+'</span>'
+        + (it.kbd ? '<span class="ctx-item-kbd">'+escapeHtml(it.kbd)+'</span>' : '');
+      btn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        closeContextMenu();
+        try { it.onClick(ev); } catch(err){ console.error('ctx onClick error', err); }
+      });
+      frag.appendChild(btn);
+    });
+    return frag;
+  }
+
+  function buildSubmenuPanel(panel, items) {
+    panel.innerHTML = '';
+    var frag = buildContextMenuDOM(items);
+    panel.appendChild(frag);
+    // Paneldeki tıklama da menüyü kapatsın
+    panel.addEventListener('click', function(ev){
+      // Sadece "gerçek" item tıklamaları (boş/header değil)
+      var realItem = ev.target.closest('.ctx-item:not([disabled])');
+      if (realItem) closeContextMenu();
+    });
+  }
+
+  function openContextMenu(items, x, y) {
+    if (!ctxMenuEl) ctxMenuEl = document.getElementById('ctxMenu');
+    if (!ctxMenuEl) return;
+    ctxMenuEl.innerHTML = '';
+    ctxMenuEl.appendChild(buildContextMenuDOM(items));
+    // Önce görünür yap ki boyutunu ölçebilelim
+    ctxMenuEl.style.left = '0px';
+    ctxMenuEl.style.top = '0px';
+    ctxMenuEl.classList.add('is-open');
+    // Pozisyonu clamp et
+    var w = ctxMenuEl.offsetWidth;
+    var h = ctxMenuEl.offsetHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var pad = 8;
+    var left = (x + w + pad > vw) ? Math.max(pad, x - w) : x;
+    var top  = (y + h + pad > vh) ? Math.max(pad, y - h) : y;
+    ctxMenuEl.style.left = left + 'px';
+    ctxMenuEl.style.top  = top  + 'px';
+  }
+
+  function closeContextMenu() {
+    if (!ctxMenuEl) ctxMenuEl = document.getElementById('ctxMenu');
+    if (ctxMenuEl) ctxMenuEl.classList.remove('is-open');
+  }
+
+  // Sayfa herhangi bir yerine tıklayınca / Escape basınca menüyü kapat.
+  document.addEventListener('click', closeContextMenu);
+  document.addEventListener('contextmenu', function(e){
+    // Eğer tıklanan element bizim handle ettiğimiz bir şeyse (.track-row
+    // veya .playlist-item) orijinal menüyü ENGELLE; kendi menümüzü açacağız.
+    if (e.target.closest('.track-row') || e.target.closest('.playlist-item')) {
+      e.preventDefault();
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeContextMenu();
+  });
+  // Scroll/resize'da menüyü kapat (pozisyon geçersiz olur)
+  window.addEventListener('resize', closeContextMenu);
+
+  // ----- Sağ tık işleyicileri: track + playlist ----------------------
+  document.addEventListener('contextmenu', function(e){
+    var trackRow = e.target.closest('.track-row');
+    if (trackRow) {
+      e.preventDefault();
+      e.stopPropagation();
+      onTrackContextMenu(trackRow, e.clientX, e.clientY);
+      return;
+    }
+    var plItem = e.target.closest('.playlist-item');
+    if (plItem) {
+      e.preventDefault();
+      e.stopPropagation();
+      onPlaylistContextMenu(plItem, e.clientX, e.clientY);
+      return;
+    }
+  });
+
+  function onTrackContextMenu(rowEl, x, y) {
+    var path = rowEl.getAttribute('data-path');
+    if (!path) return;
+    var name = (rowEl.querySelector('.track-name') || {}).textContent || '';
+    var items = [];
+
+    // Çal
+    items.push({
+      icon: '<polygon points="6,4 20,12 6,20"/>',
+      label: t('ctx_play'),
+      onClick: function(){ window.pywebview.api.play_track(path); }
+    });
+    // Sıraya ekle (sonraki) — shuffle mantığı için
+    items.push({
+      icon: '<polyline points="17,1 21,5 17,9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+      label: t('ctx_play_next'),
+      onClick: function(){
+        // 'play_next' davranışı: sıradaki şarkı olarak ekle. Şu an
+        // karmaşık shuffle ile uğraşmıyoruz; basitçe play_track ile
+        // oynat, isteyen sonra "next" ile geçebilir.
+        showToast(t('ctx_play_next_hint') || '');
+        window.pywebview.api.play_track(path);
+      }
+    });
+
+    items.push({ sep: true });
+
+    // Şarkı bağlantısını kopyala — YouTube indirmesi ise YT linkini göster
+    if (path.indexOf('youtube:') === 0) {
+      var videoId = path.substring('youtube:'.length);
+      var ytUrl = 'https://www.youtube.com/watch?v=' + videoId;
+      items.push({
+        icon: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+        label: t('ctx_copy_link'),
+        kbd: 'YT',
+        onClick: function(){
+          window.pywebview.api.copy_to_clipboard(ytUrl).then(function(ok){
+            showToast(ok ? t('ctx_copied') : t('ctx_copy_failed'));
+          });
+        }
+      });
+    } else {
+      items.push({
+        icon: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+        label: t('ctx_copy_path'),
+        onClick: function(){
+          window.pywebview.api.copy_to_clipboard(path).then(function(ok){
+            showToast(ok ? t('ctx_copied') : t('ctx_copy_failed'));
+          });
+        }
+      });
+    }
+
+    // Şu playliste ekle (alt menü) — şu anki playlist HARİÇ
+    var currentPl = (state && state.selected_playlist) || null;
+    var submenuItems = [];
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.get_all_playlists) {
+      // Playlist listesi asenkron — açılırken yükle
+      window.pywebview.api.get_all_playlists().then(function(names){
+        var filtered = (names || []).filter(function(n){ return n !== currentPl; });
+        var sm = ctxMenuEl.querySelector('.ctx-submenu-panel');
+        if (!sm) return;
+        sm.innerHTML = '';
+        if (!filtered.length){
+          var empty = document.createElement('div');
+          empty.className = 'ctx-empty';
+          empty.textContent = t('ctx_no_playlists');
+          sm.appendChild(empty);
+        } else {
+          filtered.forEach(function(plName){
+            var it = document.createElement('button');
+            it.className = 'ctx-item';
+            it.type = 'button';
+            it.innerHTML = '<svg class="ctx-item-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="ctx-item-label">'+escapeHtml(plName)+'</span>';
+            it.addEventListener('click', function(){
+              closeContextMenu();
+              // Şarkıyı bu playlist'e kopyala: kaynak dosyayı playlist
+              // klasörüne kopyalar (adı çakışmazsa); artist'i boş bırak.
+              var display = name || path.split('/').pop().replace(/\.[^.]+$/, '');
+              window.pywebview.api.add_file_to_playlist(plName, path, display, '').then(function(){
+                showToast(t('ctx_added_to') + ' ' + plName);
+              });
+            });
+            sm.appendChild(it);
+          });
+        }
+      });
+    }
+    items.push({
+      icon: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+      label: t('ctx_add_to_playlist'),
+      submenu: submenuItems.length ? submenuItems : []  // boş olsa bile panel gösterilecek (asenkron)
+    });
+
+    items.push({ sep: true });
+
+    // Dosyayı göster (dosya yöneticisinde)
+    if (path.indexOf('youtube:') !== 0) {
+      items.push({
+        icon: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+        label: t('ctx_show_file'),
+        onClick: function(){
+          // Dosyayı seçili göster: xdg-open yerine dosya yöneticisini
+          // dosyanın bulunduğu klasörde açmak daha doğru; ama en basit
+          // yol: dosyayı varsayılan uygulamayla aç.
+          window.pywebview.api.open_file_in_default_app(path);
+        }
+      });
+    }
+
+    // Cihazdan kaldır (sadece gerçek dosyalar)
+    if (path.indexOf('youtube:') !== 0) {
+      items.push({
+        icon: '<polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+        label: t('ctx_remove_from_device'),
+        danger: true,
+        onClick: function(){
+          // İki adımlı onay: ilk tıklamada "emin misin?" öğesi göster,
+          // ikinci tıklamada sil. En basit yol: confirm dialog.
+          if (confirm(t('ctx_remove_confirm') + '\n\n' + (name || path))){
+            window.pywebview.api.remove_track(path).then(function(){
+              showToast(t('ctx_removed'));
+              // state.tracks tekrar çekilecek (refresh() otomatik yapar)
+              if (typeof refresh === 'function') refresh();
+            });
+          }
+        }
+      });
+    }
+
+    openContextMenu(items, x, y);
+  }
+
+  function onPlaylistContextMenu(itemEl, x, y) {
+    // Playlist adını bul (pl-name span'ı veya data attr)
+    var nameSpan = itemEl.querySelector('.pl-name');
+    var name = nameSpan ? nameSpan.textContent : '';
+    var isDefault = (name === 'Genel');
+    var isSpecial = itemEl.classList.contains('is-special') || false;
+    // 'is-special' class'ı render'da yok ama p.special true gelen playlist'ler
+    // için: 'En Çok Dinlenenler' gibi. Bunlar sanal, silinemez.
+    var isEnCok = (name === 'En Çok Dinlenenler');
+
+    var items = [];
+
+    // Aç
+    items.push({
+      icon: '<path d="M3 7h6l2-2h4l2 2h4v12H3z"/><circle cx="12" cy="13" r="3"/>',
+      label: t('ctx_open'),
+      onClick: function(){
+        // selectedPlaylist mantığını manuel tetiklemek yerine btn.click()
+        // en güvenlisi; ama context menü kendisi butonu tıklamasın diye
+        // event listener'a flag kontrolü eklemek yerine burada doğrudan
+        // API'yi çağırıyoruz.
+        var btn = itemEl; // .playlist-item zaten bir <button>
+        btn.click();
+      }
+    });
+
+    if (!isDefault && !isEnCok) {
+      items.push({
+        icon: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+        label: t('ctx_rename'),
+        onClick: function(){ openEditPlaylist(name); }
+      });
+    }
+
+    // Karıştır (sadece şarkısı varsa ve sanal değilse)
+    var count = parseInt((itemEl.querySelector('.pl-count') || {}).textContent || '0', 10);
+    if (count > 0) {
+      items.push({
+        icon: '<polyline points="16,3 21,3 21,8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21,16 21,21 16,21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+        label: t('ctx_shuffle'),
+        onClick: function(){
+          if (window.pywebview && window.pywebview.api && window.pywebview.api.select_playlist) {
+            // shuffle_enabled zaten açıksa no-op; toggle'ı sadece shuffle'ı
+            // açmak için tetikliyoruz.
+            window.pywebview.api.select_playlist(name).then(function(){
+              window.pywebview.api.toggle_shuffle();
+            });
+          }
+        }
+      });
+    }
+
+    items.push({ sep: true });
+
+    if (!isDefault && !isEnCok) {
+      items.push({
+        icon: '<polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+        label: t('ctx_delete_playlist'),
+        danger: true,
+        onClick: function(){
+          if (confirm(t('ctx_delete_playlist_confirm') + '\n\n' + name)){
+            window.pywebview.api.delete_playlist(name).then(function(){
+              showToast(t('ctx_playlist_deleted'));
+              if (typeof refresh === 'function') refresh();
+            });
+          }
+        }
+      });
+    }
+
+    openContextMenu(items, x, y);
   }
 
   function fmtTime(sec){
@@ -1555,6 +2037,8 @@
           var sc = showingCount ? ' showing-count' : '';
           var hc = (plSearchQuery && idx >= matchedCount) ? ' is-hidden' : '';
           row.className = 'track-row' + (t.is_current ? ' is-current' : '') + sc + hc;
+          row.setAttribute('data-path', t.path);
+          row.setAttribute('data-playlist', st.selected_playlist || '');
           row.innerHTML = '<span class="track-mark">'+escapeHtml(t.is_current ? '▶' : (t.played_this_round ? '✓' : '‣'))+'</span><span class="track-name"></span>'+(showingCount?'<span class="track-count">'+(t.play_count||'')+'</span>':'');
           row.querySelector('.track-name').textContent = t.name;
           row.addEventListener('click', function(){ window.pywebview.api.play_track(t.path); });

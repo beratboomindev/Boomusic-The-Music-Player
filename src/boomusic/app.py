@@ -614,6 +614,53 @@ class App:
     def add_file_to_playlist(self, playlist_name: str, source_path: str, display_name: str, artist: str) -> None:
         self._submit(lambda: self._do_add_file_to_playlist(playlist_name, source_path, display_name, artist))
 
+    def remove_track(self, path: str) -> bool:
+        """Bir şarkıyı diskten siler. Worker'da çalışır: eğer o an
+        çalıyorsa önce engine durdurulur, böylece VLC dosyayı tutmaz.
+        True: silindi, False: silinemedi (dosya yok, izin yok, vs.)."""
+        result_box = {"ok": False}
+        def _worker():
+            # Eğer bu şarkı o an çalıyorsa durdur (dosya silinmeden önce
+            # VLC tutuyor olabilir; OS dosya silmeye izin verse de
+            # "playing removed file" durumu oluşur).
+            if self.engine.current_path() == path:
+                self.engine.stop()
+            result_box["ok"] = self.library.remove_track(path)
+            self._submit(self._do_rescan)
+        self._submit(_worker)
+        return result_box["ok"]  # best-effort sync answer; gerçek sonuç rescan'de
+
+    def delete_playlist(self, name: str) -> None:
+        """Playlist'in klasörünü tamamen siler (tüm şarkılar + meta).
+        Eğer silinen playlist o an seçiliyse 'Genel'e geçilir; silinen
+        playlist'te çalan şarkı varsa engine durdurulur."""
+        def _worker():
+            if self._current_playlist == name:
+                self._current_playlist = None
+                self._current_playlist_tracks = []
+            # Silinen playlist'te çalan şarkı varsa durdur
+            cur = self.engine.current_path()
+            if cur:
+                try:
+                    # cur playlist'te miydi?
+                    cur_pl = self.library.playlist_name_for(cur)
+                    if cur_pl == name:
+                        self.engine.stop()
+                except Exception:
+                    pass
+            try:
+                self.library.delete_playlist(name)
+            except ValueError as e:
+                logger.warning("delete_playlist başarısız: %s", e)
+                return
+            self._submit(self._do_rescan)
+        self._submit(_worker)
+
+    def get_all_playlists(self) -> list:
+        """Tüm playlist'lerin adlarını düz liste olarak döner (context menu
+        'Şu playliste ekle' alt menüsü için)."""
+        return [p["name"] for p in self.playlists() if p["name"] != self._current_playlist]
+
     MIME_EXT_MAP = {
         "mpeg": "mp3", "mp3": "mp3", "mp4": "m4a", "x-m4a": "m4a",
         "flac": "flac", "ogg": "ogg", "vorbis": "ogg", "opus": "opus",

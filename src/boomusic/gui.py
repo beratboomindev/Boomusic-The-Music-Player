@@ -206,8 +206,46 @@ class JsApi:
     def edit_playlist(self, old_name: str, new_name: str, description: str = "", cover_path: str = "") -> None:
         self.app.edit_playlist(old_name, new_name, description, cover_path)
 
+    def delete_playlist(self, name: str) -> None:
+        """Playlist'i (klasör + tüm şarkılar + meta) siler."""
+        self.app.delete_playlist(name)
+
     def add_file_to_playlist(self, playlist_name: str, source_path: str, display_name: str, artist: str = "") -> None:
         self.app.add_file_to_playlist(playlist_name, source_path, display_name, artist)
+
+    def remove_track(self, path: str) -> bool:
+        """Bir şarkıyı diskten siler. O an çalıyorsa önce durdurur."""
+        return self.app.remove_track(path)
+
+    def get_all_playlists(self) -> list:
+        """Tüm playlist adlarını döner (context menu 'Şu playliste ekle' için)."""
+        return self.app.get_all_playlists()
+
+    def copy_to_clipboard(self, text: str) -> bool:
+        """Metni sistem panosuna kopyalar (webkit2gtk clipboard API'si
+        üzerinden). Webview'da 'document.execCommand(\"copy\")' modern
+        webview'lerde güvenlik nedeniyle çalışmaz; bu yüzden native
+        API'yi kullanıyoruz.
+
+        Eğer ileride webkit clipboard API'si değişirse, burası tek güncelleme
+        noktası olur."""
+        try:
+            from .platform_clipboard import copy_text
+            return copy_text(text)
+        except Exception:
+            logger.exception("Pano kopyalama başarısız")
+            return False
+
+    def open_file_in_default_app(self, path: str) -> None:
+        """Dosyayı sistemdeki varsayılan uygulamayla açar (dosya yöneticisi,
+        müzik çalar, video oynatıcı vs. — kullanıcının seçtiği uzantıya
+        göre değişir). 'Cihazdan kaldır' alternatif olarak 'şarkıyı göster'
+        için kullanışlı."""
+        try:
+            import subprocess
+            subprocess.Popen(["xdg-open", path])
+        except Exception:
+            logger.exception("Dosya açılamadı: %s", path)
 
     def pick_image_file(self) -> Optional[str]:
         """Native dosya seçici açar, seçilen resim dosyasının yolunu döner."""

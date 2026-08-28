@@ -255,6 +255,88 @@ class Library:
         folder.mkdir(parents=True, exist_ok=True)
         self._invalidate_cache()
 
+    def delete_playlist(self, name: str) -> None:
+        """Playlist'in klasörünü tamamen siler. Default playlist (Genel)
+        SİLİNEMEZ (zaten disk üzerinde ayrı bir klasörü yok, müzik kökünün
+        kendisi). Başarılıysa cache invalidate edilir; rescan gerekir."""
+        if name == self.DEFAULT_PLAYLIST_NAME:
+            raise ValueError("Varsayılan çalma listesi silinemez")
+        folder = self._folder_for_playlist(name)
+        if not folder.exists():
+            # Zaten yok; başarılı sayılır.
+            self._invalidate_cache()
+            return
+        if not folder.is_dir():
+            raise ValueError(f"Beklenmeyen yol türü: {folder}")
+        # Müzik kökünün altında mı kontrolü (path traversal koruması)
+        root = Path(self.folder).expanduser().resolve()
+        target = folder.resolve()
+        try:
+            target.relative_to(root)
+        except ValueError:
+            raise ValueError(f"Güvenlik: playlist klasörü müzik kökünün dışında: {folder}")
+        import shutil
+        shutil.rmtree(folder)
+        self._invalidate_cache()
+
+    def remove_track(self, track_path: str) -> bool:
+        """Tek bir şarkıyı diskten SİLER. Track playlist'ten (alt klasörden)
+        veya Genel'den (kök dizin) olabilir. Başarıyla silindiyse True.
+
+        Sadece gerçek ses dosyalarını siler; yanlışlıkla başka bir dosya
+        yolunun silinmesini engellemek için uzantı kontrolü yapar. Eğer
+        bu şarkı Genel (kök dizin) playlist'indeyse, dosya tamamen
+        silinir; alt klasördeyse sadece dosya silinir (diğer şarkılar
+        etkilenmez)."""
+        path = Path(track_path).expanduser()
+        if not path.exists() or not path.is_file():
+            return False
+        if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            # Güvenlik: desteklenmeyen uzantılı dosyaları silmeyi reddet.
+            logger.warning("remove_track: desteklenmeyen uzantı, silinmedi: %s", path)
+            return False
+        try:
+            path.unlink()
+        except OSError:
+            logger.exception("Şarkı silinemedi: %s", path)
+            return False
+        # meta dosyalarındaki bu track'e ait girdiyi de temizle (en iyi
+        # çaba; meta'da orphan anahtar kalırsa zarar yok, sadece yer kaplar).
+        self._cleanup_track_meta(track_path)
+        self._invalidate_cache()
+        return True
+
+    def _cleanup_track_meta(self, track_path: str) -> None:
+        """Track silindikten sonra ilgili playlist'in track_meta.json
+        dosyasından da bu dosya adına ait girdiyi kaldırır (varsa)."""
+        fname = Path(track_path).name
+        # Hangi playlist'te olduğunu bul
+        try:
+            rel = Path(track_path).resolve().relative_to(Path(self.folder).expanduser().resolve())
+        except ValueError:
+            return
+        if len(rel.parts) < 2:
+            playlist_name = self.DEFAULT_PLAYLIST_NAME
+        else:
+            playlist_name = rel.parts[0]
+        if playlist_name == self.DEFAULT_PLAYLIST_NAME:
+            # Kök dizindeki track'lerin metası Genel için tutulmaz (mevcut
+            # _entries_for mantığına göre; meta sadece alt klasörler için).
+            return
+        meta_path = self._folder_for_playlist(playlist_name) / self.TRACK_META_FILENAME
+        if not meta_path.exists():
+            return
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except Exception:
+            return
+        if fname in meta:
+            del meta[fname]
+            try:
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+            except OSError:
+                logger.exception("track_meta.json güncellenemedi: %s", meta_path)
+
     def rename_playlist(self, old_name: str, new_name: str) -> None:
         if old_name == self.DEFAULT_PLAYLIST_NAME:
             raise ValueError("Varsayılan çalma listesi yeniden adlandırılamaz")
