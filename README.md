@@ -21,9 +21,9 @@ cd Boomusic-The-Music-Player
 bash install.sh
 ```
 
-For non-interactive updates (e.g. CI, or to keep a `just_icon_mode=true`
-session uninterrupted), use `update.sh` — same as `install.sh` but it
-asks no questions and does not launch the app at the end:
+For non-interactive updates use `update.sh` — same as `install.sh` but it
+asks no questions. It will close any running GUI instance and launch the
+new version at the end:
 ```bash
 bash update.sh
 ```
@@ -152,8 +152,9 @@ bash install.sh
 ```
 
 `install.sh` interaktif olur (autostart, masaüstü simgesi, vb. için soru
-sorar) ve sonda uygulamayı başlatır. Güncelleme için etkileşimsiz ve
-başlatmayan sürüm istersen `update.sh` kullan:
+sorar) ve sonda uygulamayı başlatır. Güncelleme için etkileşimsiz sürüm
+istersen `update.sh` kullan; sormadan çalışır, çalışan eski GUI örneğini
+kapatır ve yeni sürümü arka planda başlatır:
 
 ```bash
 bash update.sh

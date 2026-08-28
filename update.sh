@@ -24,11 +24,12 @@
 #     yeniden oluşturur.
 #   - Eksik bileşen özetini yazdırır.
 #
-# Bu betik YAPMAZ (farkları):
+# Bu betik YAPMAZ (install.sh'ten farkları):
 #   - PATH sorusu sormaz (gerekirse kullanıcı kendisi ekler).
 #   - Masaüstü simgesi sormaz/oluşturmaz.
 #   - Otomatik başlatma (autostart) etkinleştirmez.
-#   - Sonda uygulamayı başlatmaz.
+#   - Sonda sormadan uygulamayı BAŞLATIR (güncelleme bitti, yeni sürüm
+#     hemen açılsın isteği varsayılan).
 #   - Mevcut çalışan örneği durdurmaz. Bunu update'ten önce kullanıcının
 #     kendisi yapması beklenir (örn. "pkill -f 'boomusic'" veya tepsi
 #     menüsünden "Çıkış"). Birden fazla örnek çalışırsa tek-örnek kilidi
@@ -106,7 +107,7 @@ if [[ ! -d "$SRC_DIR" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-step "1/9 - Python3 kontrol ediliyor"
+step "1/10 - Python3 kontrol ediliyor"
 if ! command -v python3 >/dev/null 2>&1; then
     printf "\n${YELLOW}HATA:${RESET} python3 bulunamadı.\n" >&2
     if command -v pacman >/dev/null 2>&1; then
@@ -142,7 +143,7 @@ fi
 ok "python3 venv modülü hazır."
 
 # ---------------------------------------------------------------------------
-step "2/9 - Tepsi simgesi, GUI penceresi ve ses motoru için sistem bağımlılıkları"
+step "2/10 - Tepsi simgesi, GUI penceresi ve ses motoru için sistem bağımlılıkları"
 info "Boomusic'in çalışması için gerekli sistem paketleri kuruluyor."
 
 if command -v pacman >/dev/null 2>&1; then
@@ -199,7 +200,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-step "3/9 - Python sanal ortamı (venv) hazırlanıyor"
+step "3/10 - Python sanal ortamı (venv) hazırlanıyor"
 mkdir -p "$INSTALL_DIR"
 if [[ -d "$VENV_DIR" ]]; then
     ok "Sanal ortam zaten var, yeniden kullanılıyor: $VENV_DIR"
@@ -246,7 +247,7 @@ if [[ -x "$VENV_DIR/bin/pip" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-step "4/9 - Uygulama dosyaları kopyalanıyor"
+step "4/10 - Uygulama dosyaları kopyalanıyor"
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR"
 if ! cp -r "$SRC_DIR" "$APP_DIR/boomusic"; then
@@ -255,7 +256,7 @@ fi
 ok "Kopyalandı: $APP_DIR/boomusic"
 
 # ---------------------------------------------------------------------------
-step "5/9 - Anthropic Serif font dosyası indiriliyor (çevrimdışı kullanım için)"
+step "5/10 - Anthropic Serif font dosyası indiriliyor (çevrimdışı kullanım için)"
 FONT_DIR="$APP_DIR/boomusic/assets/fonts"
 mkdir -p "$FONT_DIR"
 if command -v curl >/dev/null 2>&1; then
@@ -270,7 +271,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-step "6/9 - Başlatıcı komutlar oluşturuluyor (~/.local/bin/)"
+step "6/10 - Başlatıcı komutlar oluşturuluyor (~/.local/bin/)"
 mkdir -p "$BIN_DIR"
 LAUNCHER_TRAY="$BIN_DIR/boomusic-tray"
     cat > "$LAUNCHER" <<EOF
@@ -303,7 +304,7 @@ fi
 ok "Oluşturuldu: $LAUNCHER_TRAY"
 
 # ---------------------------------------------------------------------------
-step "7/9 - Varsayılan müzik klasörü"
+step "7/10 - Varsayılan müzik klasörü"
 mkdir -p "$DEFAULT_MUSIC_DIR"
 ok "Müziklerini şu klasöre koyabilirsin: $DEFAULT_MUSIC_DIR"
 
@@ -315,7 +316,7 @@ if [[ -f "$SCRIPT_DIR/CHANGELOG.md" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-step "8/9 - Uygulama menüsüne ekleniyor (kolay açılış)"
+step "8/10 - Uygulama menüsüne ekleniyor (kolay açılış)"
 mkdir -p "$APPLICATIONS_DIR"
 cat > "$APPLICATIONS_DIR/boomusic.desktop" <<EOF
 [Desktop Entry]
@@ -345,18 +346,13 @@ EOF
 ok "Just Icon menüsü eklendi: $APPLICATIONS_DIR/boomusic-tray.desktop"
 
 # ---------------------------------------------------------------------------
-step "9/9 - Güncelleme tamamlandı"
+step "9/10 - Güncelleme tamamlandı"
 info ""
 info "  Müzik klasörü : $DEFAULT_MUSIC_DIR"
 info "  Ayarlar       : ~/.config/boomusic/config.json"
 info "  İstatistikler : ~/.local/share/boomusic/stats.json"
 info "  Günlük (log)  : ~/.local/share/boomusic/boomusic.log"
 info "  Değişiklikler : ~/.local/share/boomusic/CHANGELOG.md"
-info ""
-info "Bu betik uygulamayı BAŞLATMADI. Güncelleme sonrası:"
-info "  - Yeni bir Boomusic örneği başlatmak için:  ${BOLD}boomusic${RESET}"
-info "  - Çalışan örneği durdurmak için:           ${BOLD}pkill -f 'python3 -m boomusic'${RESET}"
-info "    (yeni sürüm aktif olsun diye)"
 info ""
 info "${BOLD}Eksik bileşenler (varsa):${RESET}"
 declare -a MISSING=()
@@ -387,3 +383,40 @@ else
     done
     printf "\n  Bu özellikler çalışmayabilir ama uygulama yine de başlatılabilir.\n"
 fi
+
+# ---------------------------------------------------------------------------
+step "10/10 - Uygulama başlatılıyor"
+# Güncelleme sonrası mevcut örneği düzgünce kapatıp yeni sürümü başlatıyoruz.
+# Tek-örnek kilidi (lock dosyaları) yenisi başlatılmasını engelleyeceği için
+# önce eski süreci kapatmak ŞART. Kullanıcı 'pkill' yapmak zorunda kalmamalı.
+#
+# Sadece GUI örneğini kapatıyoruz; kullanıcı ayrıca bir Just Icon (--tray-only)
+# örneği çalıştırdıysa ona DOKUNMUYORUZ (GUI örneği güncellenirken Just Icon
+# arka planda çalışmaya devam edebilir; kullanıcı istediği zaman menüsünden
+# kapatır veya yeni sürümü elle yeniden başlatır).
+GUI_LOCK="$HOME/.local/share/boomusic/boomusic-gui.lock"
+if [[ -f "$GUI_LOCK" ]]; then
+    OLD_PID="$(tr -d '[:space:]' < "$GUI_LOCK" 2>/dev/null)"
+    if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then
+        info "Eski GUI örneği bulundu (pid=$OLD_PID), düzgünce kapatılıyor..."
+        kill -TERM "$OLD_PID" 2>/dev/null || true
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            if ! kill -0 "$OLD_PID" 2>/dev/null; then
+                ok "Eski örnek düzgünce kapandı."
+                break
+            fi
+            sleep 0.5
+        done
+        if kill -0 "$OLD_PID" 2>/dev/null; then
+            warn "Eski örnek 5 saniyede kapanmadı, zorla sonlandırılıyor..."
+            kill -KILL "$OLD_PID" 2>/dev/null || true
+            sleep 0.5
+        fi
+    fi
+fi
+
+# Yeni sürümü arka planda başlat (install.sh'in sondaki davranışıyla aynı).
+setsid "$LAUNCHER" >/dev/null 2>&1 &
+disown
+sleep 1
+ok "Boomusic yeni sürümüyle başlatıldı, tepsi simgesini kontrol et."
