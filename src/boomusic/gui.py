@@ -154,6 +154,7 @@ class JsApi:
             "font_family": self.app.config.settings.font_family,
             "language": self.app.config.settings.language,
             "sidebar_width": int(self.app.config.settings.sidebar_width),
+            "just_icon_mode": bool(self.app.config.settings.just_icon_mode),
         }
 
     def set_font(self, family: str) -> None:
@@ -175,6 +176,34 @@ class JsApi:
             return
         w = max(140, min(400, w))
         self.app.config.update(sidebar_width=w)
+
+    def set_just_icon_mode(self, enabled: bool) -> None:
+        """Just Icon Mode'u aç/kapat. Ayar config.json'a yazılır; bir sonraki
+        başlangıçta __main__.py bu bayrağa bakarak pencere açıp açmamaya karar
+        verir. Mevcut oturumda etkinleştirildiğinde pencere hemen gizlenir +
+        kapatılır (kullanıcı tray'den kontrol etmeye devam eder)."""
+        self.app.config.update(just_icon_mode=bool(enabled))
+        if enabled and self.window is not None:
+            try:
+                self.window.hide()
+                self.window.destroy()
+            except Exception:
+                logger.exception("Pencere kapatılamadı (just_icon_mode açılırken)")
+
+    def enter_window_mode(self) -> None:
+        """Just Icon Mode açıkken bile, kullanıcı tray'den 'Pencere Moduna Dön'
+        seçtiğinde pencere tekrar açılabilsin diye config bayrağını kapatır ve
+        __main__.py'deki bekleyen thread'i tetikler."""
+        self.app.config.update(just_icon_mode=False)
+
+    def notify(self, title: str, message: str) -> None:
+        """Masaüstü bildirimi (libnotify). Sadece notify modülü kuruluysa
+        çalışır; aksi halde sessizce yok sayılır (JS çağrısı try/catch'li)."""
+        try:
+            from . import notifier
+            notifier.notify(title, message)
+        except Exception:
+            logger.exception("notify çağrısı başarısız")
 
     def get_cover(self, playlist_name: str) -> Optional[str]:
         return self.app.get_playlist_cover(playlist_name)

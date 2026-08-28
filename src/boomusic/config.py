@@ -84,6 +84,7 @@ class Settings:
     font_family: str = "DM Sans"
     language: str = "en"
     sidebar_width: int = 220  # kullanıcının elle sürüklediği genişlik (px)
+    just_icon_mode: bool = False  # True ise pencere hiç açılmaz, sadece tray
 
     @classmethod
     def defaults(cls) -> "Settings":

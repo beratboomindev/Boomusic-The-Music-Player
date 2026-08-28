@@ -872,6 +872,10 @@
         <span class="toggle-label" id="lblInternetAccess">İnternet Erişimi</span>
         <button class="toggle-switch" id="btnInternetToggle" title="YouTube arama/oynatma izni"></button>
       </div>
+      <div class="toggle-row">
+        <span class="toggle-label" id="lblJustIconMode">Sadece İkon Modu</span>
+        <button class="toggle-switch" id="btnJustIconToggle" title="Pencere hiç açılmaz; tüm kontrol tepsi simgesinden yapılır"></button>
+      </div>
       <div class="modal-row">
         <span class="modal-label" id="lblFont">Yazı Tipi</span>
         <select class="font-select" id="fontSelect">
@@ -994,6 +998,8 @@
       rescan: 'Yeniden Tara',
       np_panel: 'Şimdi Çalan Paneli',
       internet_access: 'İnternet Erişimi',
+      just_icon_mode: 'Sadece İkon Modu',
+      just_icon_toggle: 'Pencere hiç açılmaz; tüm kontrol tepsi simgesinden yapılır',
       font_label: 'Yazı Tipi',
       language_label: 'Dil',
       only_songs: 'Sadece şarkılar',
@@ -1056,6 +1062,8 @@
       rescan: 'Rescan',
       np_panel: 'Now Playing Panel',
       internet_access: 'Internet Access',
+      just_icon_mode: 'Just Icon Mode',
+      just_icon_toggle: 'No window at all; control everything from the tray icon',
       font_label: 'Font',
       language_label: 'Language',
       only_songs: 'Only songs',
@@ -1140,7 +1148,10 @@
     if (el=document.getElementById('btnNext')) el.title = L.next_title;
     if (el=document.getElementById('btnShuffle')) el.title = L.shuffle_title;
     if (el=document.getElementById('btnNpTogle')) el.title = L.np_panel_toggle;
+    if (el=document.getElementById('lblInternetAccess')) el.textContent = L.internet_access;
+    if (el=document.getElementById('lblJustIconMode')) el.textContent = L.just_icon_mode;
     if (el=document.getElementById('btnInternetToggle')) el.title = L.internet_toggle;
+    if (el=document.getElementById('btnJustIconToggle')) el.title = L.just_icon_toggle;
     if (el=document.getElementById('plNameInput')) el.placeholder = L.pl_name_placeholder;
     if (el=document.getElementById('plDescInput')) el.placeholder = L.pl_desc_placeholder;
     if (el=document.getElementById('atNameInput')) el.placeholder = L.at_name_placeholder;
@@ -1772,6 +1783,8 @@
         if (it) it.classList.toggle('is-on', internetEnabled);
         var npT = document.getElementById('btnNpTogle');
         if (npT) npT.classList.toggle('is-on', s.nowplaying_visible !== false);
+        var jiT = document.getElementById('btnJustIconToggle');
+        if (jiT) jiT.classList.toggle('is-on', !!s.just_icon_mode);
         var fSelect = document.getElementById('fontSelect');
         if (fSelect) fSelect.value = s.font_family || 'DM Sans';
         var lSelect = document.getElementById('langSelect');
@@ -1792,6 +1805,23 @@
     document.getElementById('btnNpTogle').addEventListener('click', function(){
       this.classList.toggle('is-on');
       window.pywebview.api.toggle_nowplaying_panel();
+    });
+    document.getElementById('btnJustIconToggle').addEventListener('click', function(){
+      // Görsel olarak hemen çevir (kullanıcı tıklamasının karşılığı gecikmesin),
+      // sonra Python tarafına bildir. Python: bayrağı config'e yazar ve pencereyi
+      // yok eder; etkinleştirildiğinde kullanıcı bir daha pencereyi AÇAMAZ
+      // (geri dönmek için tray menüsündeki 'Pencere Moduna Dön' gerekir).
+      this.classList.toggle('is-on');
+      var on = this.classList.contains('is-on');
+      window.pywebview.api.set_just_icon_mode(on);
+      if (on){
+        // Pencere kapanıyor; kullanıcıyı bilgilendir.
+        var settingsModal = document.getElementById('settingsModal');
+        if (settingsModal) settingsModal.classList.remove('is-open');
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.notify){
+          try { window.pywebview.api.notify('Boomusic', 'Sadece İkon Modu açık. Tepsi simgesinden kontrol edin.'); } catch(_) {}
+        }
+      }
     });
     document.getElementById('btnQuitApp').addEventListener('click', function(){ window.pywebview.api.quit_app(); });
 

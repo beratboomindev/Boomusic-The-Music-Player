@@ -45,7 +45,10 @@ No doubt. **Trust the process.**
 - **i18n Language Support** — Switch between English (default) and Turkish in Settings.
 - **Font Selection** — Choose between DM Sans and Anthropic Serif.
 - **Automatic Startup** — Optionally start Boomusic in the background at boot.
-- **Just Icon Mode** — Control Boomusic solely through the system tray. *(Coming with 1.7.3)*
+- **Just Icon Mode** — Run Boomusic with no window at all. Control everything
+  from the tray icon: play/pause, next/previous, shuffle, volume presets,
+  playlists, individual tracks, and switch back to window mode. *Now
+  available (planned for 1.7.3, shipped with 1.7.2).*
 - **Recommended for You** — Song suggestions based on your listening habits. *(Coming Soon)*
 - **Plugins** — Community plugins to extend functionality. *(Coming Soon)*
 - **Theme Customization** — Full visual customization. *(Coming Soon)*
@@ -98,7 +101,9 @@ At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced th
 - **Dil Desteği (i18n)** — Ayarlar'dan İngilizce ve Türkçe arasında geçiş yap.
 - **Yazı Tipi Seçimi** — DM Sans veya Anthropic Serif arasında seçim yap.
 - **Otomatik Başlatma** — Bilgisayar açılırken Boomusic arka planda otomatik başlar.
-- **Sadece İkon Modu** — Sadece sistem tepsisi ikonu üzerinden yönetim. *(1.7.3 ile geliyor)*
+- **Sadece İkon Modu** — Boomusic'i penceresiz, sadece tepsi simgesiyle çalıştır.
+  Tüm kontrol tepsi menüsünden: oynat/duraklat, sonraki/önceki, karıştır, ses
+  preset'leri, çalma listeleri, tek tek şarkılar ve pencere moduna geri dönüş.
 - **Sana Özel Öneriler** — Dinleme alışkanlıklarına göre şarkı önerileri. *(Yakında)*
 - **Eklentiler** — Topluluk pluginleri ile Boomusic'i kişiselleştir. *(Yakında)*
 - **Tema Özelleştirme** — Uygulama temasını baştan sona değiştir. *(Yakında)*
@@ -147,6 +152,38 @@ The script will:
 5. Create launcher at `~/.local/bin/boomusic`
 6. Add to application menu
 7. Optionally enable autostart
+
+---
+
+## Just Icon Mode / Sadece İkon Modu
+
+**EN:** Toggle *Settings → Just Icon Mode* ON. The window never appears
+again — the tray icon becomes your entire interface:
+- Now-playing title at the top
+- Play/Pause, Previous, Next
+- Shuffle toggle (checked state shows whether it's on)
+- Volume submenu: 0/10/20/.../100% presets, ±5 buttons, mute toggle
+- Playlists submenu: each playlist expands to its tracks; click to play
+- Rescan, open the music folder in your file manager
+- **Window Mode** (returns to the normal windowed app)
+- Quit
+
+The setting is persisted in `~/.config/boomusic/config.json` (`just_icon_mode: true`).
+Next launch will start directly in icon mode. To return: tray → *Pencere Moduna Dön*.
+
+**TR:** Ayarlar → *Sadece İkon Modu*'nu aç. Pencere bir daha açılmaz; tepsi simgesi
+tüm arayüzün olur:
+- Üstte "şu an çalıyor" başlığı
+- Oynat/Duraklat, Önceki, Sonraki
+- Karıştır aç/kapat (işareti durumu gösterir)
+- Ses alt menüsü: 0/10/20/.../100% preset'leri, ±5 düğmeleri, sustur aç/kapat
+- Çalma listeleri alt menüsü: her playlist genişler, tıkla çal
+- Yeniden tara, müzik klasörünü dosya yöneticisinde aç
+- **Pencere Moduna Dön** (normal pencereli uygulamaya dönüş)
+- Çıkış
+
+Ayar `~/.config/boomusic/config.json`'a kaydedilir (`just_icon_mode: true`).
+Sonraki açılışta doğrudan ikon modunda başlar. Geri dönmek için: tepsi → *Pencere Moduna Dön*.
 
 ---
 

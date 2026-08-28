@@ -123,18 +123,29 @@ def main() -> int:
         lock_file.close()
         return 1
 
+    # Just Icon Mode: config'de True ise uygulama PENCERESİZ başlar; tüm
+    # kontrol tepsi simgesindeki menüden yapılır. Ana thread bir Event'te
+    # bloklanır; kullanıcı 'Pencere Moduna Dön' seçince Event set edilir,
+    # tray durdurulur, ana thread uyanır, pencere oluşturulup gösterilir.
+    just_icon_mode = bool(app.config.settings.just_icon_mode)
+    if just_icon_mode:
+        logger.info("[2.5/5] just_icon_mode=AKTİF: pencere oluşturulmayacak.")
+
     # -- GUI penceresi nesnesini oluştur (henüz BAŞLATMIYORUZ) -----------------------
     gui = None
-    try:
-        from .gui import GuiWindow
+    if not just_icon_mode:
+        try:
+            from .gui import GuiWindow
 
-        gui = GuiWindow(app)
-        logger.info("[3/5] GuiWindow() oluşturuldu (pencere HENÜZ görünmüyor, bu normal).")
-    except Exception:
-        logger.exception(
-            "[3/5] GuiWindow() oluşturulamadı (webkit2gtk-4.1/GTK kurulu değil olabilir). "
-            "Uygulama sadece tepsi simgesiyle devam edecek."
-        )
+            gui = GuiWindow(app)
+            logger.info("[3/5] GuiWindow() oluşturuldu (pencere HENÜZ görünmüyor, bu normal).")
+        except Exception:
+            logger.exception(
+                "[3/5] GuiWindow() oluşturulamadı (webkit2gtk-4.1/GTK kurulu değil olabilir). "
+                "Uygulama sadece tepsi simgesiyle devam edecek."
+            )
+    else:
+        logger.info("[3/5] just_icon_mode açık; GuiWindow atlanıyor.")
 
     # -- Tray nesnesini oluştur (henüz BAŞLATMIYORUZ) --------------------------------
     tray = None
@@ -158,6 +169,10 @@ def main() -> int:
     tray_crashed = threading.Event()
     tray_thread: Optional[threading.Thread] = None
     tray_detached = False
+    # just_icon_mode'dan pencere moduna geçmek için ana thread bu event'i bekler.
+    enter_window_mode_event = threading.Event()
+    if tray is not None and not just_icon_mode:
+        tray.set_enter_window_mode_callback(enter_window_mode_event.set)
 
     if tray is not None and gui is not None:
         # GUI VE tray birlikte: GTK mainloop çakışmasını önlemek için tray'i
@@ -175,6 +190,8 @@ def main() -> int:
             tray_thread = _start_tray_thread(tray, tray_crashed, logger)
     elif tray is not None:
         # GUI yok: tray'in kendi başına, kendi thread'inde çalışması güvenlidir.
+        # Bu dal hem just_icon_mode=True durumunu, hem de webkit kurulu değilken
+        # otomatik düşülen durumu kapsar.
         tray_thread = _start_tray_thread(tray, tray_crashed, logger)
 
     def _handle_signal(signum, _frame):
@@ -189,6 +206,8 @@ def main() -> int:
                 gui.quit()
             except Exception:
                 logger.exception("gui.quit() sırasında hata")
+        # Just Icon Mode'daysa Event'i de set et ki ana thread uyansın ve çıkış yapsın.
+        enter_window_mode_event.set()
         # Güvenlik ağı: normal kapanış birkaç saniyede tamamlanmazsa
         # (beklenmeyen bir GTK/pywebview tuhaflığı vb.) süreci KOŞULSUZ
         # sonlandır -- kullanıcı asla elle 'kill' yapmak zorunda kalmamalı.
@@ -199,15 +218,60 @@ def main() -> int:
 
     logger.info(
         "Boomusic başlatıldı (%d şarkı bulundu, ses hazır: %s, tray: %s, gui: %s, "
-        "tray_modu: %s).",
+        "tray_modu: %s, just_icon_mode: %s).",
         app.track_count(), app.engine.audio_ready, tray is not None, gui is not None,
         "paylaşılan-döngü (run_detached)" if tray_detached else ("kendi-thread'i" if tray_thread else "yok"),
+        just_icon_mode,
     )
 
     exit_code = 0
     gui_start_failed = False
     try:
-        if gui is not None:
+        if just_icon_mode and gui is None and tray is not None:
+            # --- SADECE İKON MODU: ana thread pencere açılmasını bekler ---
+            # Kullanıcı tray'de 'Pencere Moduna Dön' seçtiğinde tray callback'i
+            # bu event'i set eder; aşağıda uyanıp pencereyi oluştururuz. Çıkış
+            # (tray menüsündeki 'Çık' veya SIGTERM) yine event'i set eder;
+            # o zaman pencere moduna geçmeden uygulama kapanır.
+            logger.info("Just Icon Mode: ana thread pencere moduna geçiş bekliyor...")
+            entered = enter_window_mode_event.wait()
+            if not entered:
+                logger.info("Event iptal edildi, çıkılıyor.")
+            else:
+                if app.config.settings.just_icon_mode:
+                    # Event, çıkış için de set edilmiş olabilir (signal handler);
+                    # eğer hâlâ just_icon_mode=True ise kullanıcı ÇIKIŞ yolunu seçti.
+                    logger.info("Event set edildi ama just_icon_mode hâlâ açık -- çıkış yolu.")
+                else:
+                    # Kullanıcı pencere moduna dönmeyi seçti. Önce tray'i
+                    # durdur (run_detached olmadığı için stop() güvenli), sonra
+                    # pencere oluştur ve başlat.
+                    logger.info("Pencere moduna geçiliyor -- tray durduruluyor...")
+                    try:
+                        tray.stop()
+                    except Exception:
+                        logger.exception("tray.stop() sırasında hata")
+                    if tray_thread is not None:
+                        tray_thread.join(timeout=3)
+                    try:
+                        from .gui import GuiWindow
+                        gui = GuiWindow(app)
+                        logger.info("GuiWindow() oluşturuldu (just_icon_mode'dan dönüş).")
+                    except Exception:
+                        logger.exception(
+                            "Pencere moduna dönüş başarısız: GuiWindow oluşturulamadı. "
+                            "Uygulama kapanıyor."
+                        )
+                        exit_code = 1
+                    if gui is not None:
+                        try:
+                            logger.info("GUI mainloop'u başlatılıyor...")
+                            gui.start()
+                            logger.info("GUI mainloop'u normal şekilde sona erdi.")
+                        except Exception:
+                            logger.exception("GUI başlatılamadı (just_icon_mode'dan dönüş).")
+                            exit_code = 1
+        elif gui is not None:
             try:
                 logger.info("GUI mainloop'u başlatılıyor (webview.start) -- ana thread burada bloke olacak...")
                 gui.start()
