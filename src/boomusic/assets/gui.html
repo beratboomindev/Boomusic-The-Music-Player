@@ -843,6 +843,39 @@
     text-align: center; font-style: italic;
   }
 
+  /* Confirm modal — silme gibi tehlikeli işlemler için native confirm()
+   * yerine; başlık + mesaj + İptal/Onayla, sol tarafta uyarı ikonu. */
+  .confirm-box {
+    width: 420px;
+    max-width: 92vw;
+    padding: 22px 22px 16px;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    grid-template-areas: "icon body" ". footer";
+    column-gap: 14px;
+    row-gap: 16px;
+  }
+  .confirm-icon {
+    grid-area: icon;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 92, 92, 0.12);
+    color: var(--red);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .confirm-body { grid-area: body; min-width: 0; }
+  .confirm-body h2 {
+    font-size: 15px; font-weight: 600;
+    margin-bottom: 6px; letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .confirm-body p {
+    font-size: 13px; line-height: 1.5;
+    color: var(--text-muted);
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .confirm-box .modal-footer { grid-area: footer; margin-top: 0; }
+
 </style>
 </head>
 <body>
@@ -1052,6 +1085,24 @@
     </div>
   </div>
 
+  <!-- Confirm Modal — silme gibi tehlikeli işlemler için. confirm()'in
+       çirkin başlık çubuğu yerine mevcut modal stilinde; sade ve net. -->
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal confirm-box">
+      <div class="confirm-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="confirm-body">
+        <h2 id="confirmTitle">Onay</h2>
+        <p id="confirmMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn" id="btnConfirmCancel">İptal</button>
+        <button class="modal-btn danger" id="btnConfirmOk">Onayla</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Context Menu (sağ tık) — JS tarafından dinamik doldurulur. -->
   <div class="ctx-menu" id="ctxMenu" role="menu"></div>
 
@@ -1110,12 +1161,16 @@
       ctx_show_file: 'Dosyayı göster',
       ctx_remove_from_device: 'Cihazdan kaldır',
       ctx_remove_confirm: 'Bu şarkıyı diskten silmek istediğine emin misin?',
+      ctx_remove_title: 'Şarkıyı sil',
+      ctx_remove_ok: 'Sil',
       ctx_removed: 'Şarkı silindi',
       ctx_open: 'Aç',
       ctx_rename: 'Yeniden adlandır',
       ctx_shuffle: 'Karıştır ve çal',
       ctx_delete_playlist: 'Playlisti sil',
       ctx_delete_playlist_confirm: 'Bu playlist ve içindeki TÜM şarkılar silinecek. Emin misin?',
+      ctx_delete_playlist_title: 'Playlisti sil',
+      ctx_delete_ok: 'Sil',
       ctx_playlist_deleted: 'Playlist silindi',
       downloading: '⬇ İndiriliyor',
       new_playlist: 'Yeni Çalma Listesi',
@@ -1195,12 +1250,16 @@
       ctx_show_file: 'Show in file manager',
       ctx_remove_from_device: 'Remove from device',
       ctx_remove_confirm: 'Delete this track from disk?',
+      ctx_remove_title: 'Delete track',
+      ctx_remove_ok: 'Delete',
       ctx_removed: 'Track removed',
       ctx_open: 'Open',
       ctx_rename: 'Rename',
       ctx_shuffle: 'Shuffle and play',
       ctx_delete_playlist: 'Delete playlist',
       ctx_delete_playlist_confirm: 'This playlist and ALL its tracks will be deleted. Continue?',
+      ctx_delete_playlist_title: 'Delete playlist',
+      ctx_delete_ok: 'Delete',
       ctx_playlist_deleted: 'Playlist deleted',
       downloading: '⬇ Downloading',
       new_playlist: 'New Playlist',
@@ -1308,14 +1367,52 @@
     setTimeout(function(){ el.remove(); }, 2000);
   }
 
+  // ====== Confirm modal ===================================================
+  // Native confirm()'in çirkin başlık çubuğu yerine mevcut modal stili.
+  // Tehlikeli işlemler için kullanılır (silme, kaldırma).
+  //   showConfirm(title, message, onOk)
+  //   showConfirm(title, message, onOk, { danger: true|false, okLabel: '...', cancelLabel: '...' })
+  function showConfirm(title, message, onOk, opts){
+    opts = opts || {};
+    var m = document.getElementById('confirmModal');
+    if (!m) { if (window.confirm(message)) onOk && onOk(); return; }
+    document.getElementById('confirmTitle').textContent = title || 'Onay';
+    document.getElementById('confirmMessage').textContent = message || '';
+    var okBtn = document.getElementById('btnConfirmOk');
+    var cancelBtn = document.getElementById('btnConfirmCancel');
+    okBtn.textContent = opts.okLabel || 'Onayla';
+    cancelBtn.textContent = opts.cancelLabel || 'İptal';
+    if (opts.danger) okBtn.classList.add('danger');
+    else okBtn.classList.remove('danger');
+    m.classList.add('is-open');
+
+    // Eski listener'ları temizle, yeni tane oluştur (tek kullanımlık)
+    var newOk = okBtn.cloneNode(true);
+    var newCancel = cancelBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOk, okBtn);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    function close(){
+      m.classList.remove('is-open');
+    }
+    newOk.addEventListener('click', function(){
+      close();
+      try { onOk && onOk(); } catch(err){ console.error('confirm onOk', err); }
+    });
+    newCancel.addEventListener('click', close);
+    // Escape ile kapatma
+    function onKey(e){ if (e.key === 'Escape'){ close(); document.removeEventListener('keydown', onKey); } }
+    document.addEventListener('keydown', onKey);
+  }
+
   // ====== Context menu (sağ tık) ============================================
   // Declarative: openContextMenu([{icon, label, kbd?, danger?, onClick, submenu?}])
   //   - submenu varsa o item'ın yanına açılır (hover'da).
   //   - x/y viewport koordinatı; menü ekrana sığmazsa otomatik kaydırılır.
   var ctxMenuEl = null;  // lazy init: ilk çağrıda DOM'dan alınır
 
-  function buildContextMenuDOM(items) {
+  function buildContextMenuDOM(items, onSubmenuCreated) {
     var frag = document.createDocumentFragment();
+    var firstPanel = null;
     items.forEach(function(it){
       if (it.sep){
         var s = document.createElement('div');
@@ -1356,6 +1453,8 @@
         buildSubmenuPanel(panel, it.submenu);
         wrap.appendChild(panel);
         frag.appendChild(wrap);
+        if (!firstPanel) firstPanel = panel;
+        if (onSubmenuCreated) onSubmenuCreated(panel);
         return;
       }
       var btn = document.createElement('button');
@@ -1378,7 +1477,8 @@
 
   function buildSubmenuPanel(panel, items) {
     panel.innerHTML = '';
-    var frag = buildContextMenuDOM(items);
+    var result = buildContextMenuDOM(items);
+    var frag = result.frag || result;
     panel.appendChild(frag);
     // Paneldeki tıklama da menüyü kapatsın
     panel.addEventListener('click', function(ev){
@@ -1392,7 +1492,9 @@
     if (!ctxMenuEl) ctxMenuEl = document.getElementById('ctxMenu');
     if (!ctxMenuEl) return;
     ctxMenuEl.innerHTML = '';
-    ctxMenuEl.appendChild(buildContextMenuDOM(items));
+    var result = buildContextMenuDOM(items);
+    var frag = result.frag || result; // Geriye uyumluluk
+    ctxMenuEl.appendChild(frag);
     // Önce görünür yap ki boyutunu ölçebilelim
     ctxMenuEl.style.left = '0px';
     ctxMenuEl.style.top = '0px';
@@ -1503,11 +1605,12 @@
     // Şu playliste ekle (alt menü) — şu anki playlist HARİÇ
     var currentPl = (state && state.selected_playlist) || null;
     var submenuItems = [];
+    var submenuPanelRef = null;  // Panel referansını sakla
     if (window.pywebview && window.pywebview.api && window.pywebview.api.get_all_playlists) {
       // Playlist listesi asenkron — açılırken yükle
       window.pywebview.api.get_all_playlists().then(function(names){
         var filtered = (names || []).filter(function(n){ return n !== currentPl; });
-        var sm = ctxMenuEl.querySelector('.ctx-submenu-panel');
+        var sm = submenuPanelRef;  // Referansı kullan
         if (!sm) return;
         sm.innerHTML = '';
         if (!filtered.length){
@@ -1523,8 +1626,6 @@
             it.innerHTML = '<svg class="ctx-item-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="ctx-item-label">'+escapeHtml(plName)+'</span>';
             it.addEventListener('click', function(){
               closeContextMenu();
-              // Şarkıyı bu playlist'e kopyala: kaynak dosyayı playlist
-              // klasörüne kopyalar (adı çakışmazsa); artist'i boş bırak.
               var display = name || path.split('/').pop().replace(/\.[^.]+$/, '');
               window.pywebview.api.add_file_to_playlist(plName, path, display, '').then(function(){
                 showToast(t('ctx_added_to') + ' ' + plName);
@@ -1538,7 +1639,10 @@
     items.push({
       icon: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>',
       label: t('ctx_add_to_playlist'),
-      submenu: submenuItems.length ? submenuItems : []  // boş olsa bile panel gösterilecek (asenkron)
+      submenu: submenuItems.length ? submenuItems : [],  // boş olsa bile panel gösterilecek (asenkron)
+      onSubmenuCreated: function(panel) {
+        submenuPanelRef = panel;  // Panel referansını kaydet
+      }
     });
 
     items.push({ sep: true });
@@ -1564,15 +1668,17 @@
         label: t('ctx_remove_from_device'),
         danger: true,
         onClick: function(){
-          // İki adımlı onay: ilk tıklamada "emin misin?" öğesi göster,
-          // ikinci tıklamada sil. En basit yol: confirm dialog.
-          if (confirm(t('ctx_remove_confirm') + '\n\n' + (name || path))){
-            window.pywebview.api.remove_track(path).then(function(){
-              showToast(t('ctx_removed'));
-              // state.tracks tekrar çekilecek (refresh() otomatik yapar)
-              if (typeof refresh === 'function') refresh();
-            });
-          }
+          showConfirm(
+            t('ctx_remove_title') || 'Şarkıyı sil',
+            t('ctx_remove_confirm') + '\n\n' + (name || path),
+            function(){
+              window.pywebview.api.remove_track(path).then(function(){
+                showToast(t('ctx_removed'));
+                if (typeof refresh === 'function') refresh();
+              });
+            },
+            { danger: true, okLabel: t('ctx_remove_ok') || 'Sil' }
+          );
         }
       });
     }
@@ -1640,12 +1746,17 @@
         label: t('ctx_delete_playlist'),
         danger: true,
         onClick: function(){
-          if (confirm(t('ctx_delete_playlist_confirm') + '\n\n' + name)){
-            window.pywebview.api.delete_playlist(name).then(function(){
-              showToast(t('ctx_playlist_deleted'));
-              if (typeof refresh === 'function') refresh();
-            });
-          }
+          showConfirm(
+            t('ctx_delete_playlist_title') || 'Playlisti sil',
+            t('ctx_delete_playlist_confirm') + '\n\n' + name,
+            function(){
+              window.pywebview.api.delete_playlist(name).then(function(){
+                showToast(t('ctx_playlist_deleted'));
+                if (typeof refresh === 'function') refresh();
+              });
+            },
+            { danger: true, okLabel: t('ctx_delete_ok') || 'Sil' }
+          );
         }
       });
     }
