@@ -21,6 +21,13 @@ cd Boomusic-The-Music-Player
 bash install.sh
 ```
 
+For non-interactive updates (e.g. CI, or to keep a `just_icon_mode=true`
+session uninterrupted), use `update.sh` — same as `install.sh` but it
+asks no questions and does not launch the app at the end:
+```bash
+bash update.sh
+```
+
 Ya da [Releases](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases) sayfasından son sürümü indir.
 
 ---
@@ -142,6 +149,14 @@ At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced th
 
 ```bash
 bash install.sh
+```
+
+`install.sh` interaktif olur (autostart, masaüstü simgesi, vb. için soru
+sorar) ve sonda uygulamayı başlatır. Güncelleme için etkileşimsiz ve
+başlatmayan sürüm istersen `update.sh` kullan:
+
+```bash
+bash update.sh
 ```
 
 The script will:
