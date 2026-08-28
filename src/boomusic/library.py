@@ -134,14 +134,37 @@ class Library:
         return self._by_index.get(path)
 
     def playlists(self):
+        """Diskteki tüm alt klasörleri çalma listesi olarak listeler.
+
+        Sadece içinde şarkı olan klasörler DEĞİL, kullanıcının bilinçli
+        oluşturduğu (içi boş da olsa) her alt klasör gösterilir. Mantık:
+        "Genel" (müzik kökünün kendisi) her zaman ilk sırada, sonra
+        diskteki alt klasörler alfabetik sırayla. Sıralama, her playlist'in
+        içindeki parça sayısını az önce hesaplanmış değerden alır;
+        boş olanlar 0 gösterir.
+        """
         if self._playlist_cache is not None:
             return self._playlist_cache
         root = Path(self.folder).expanduser()
-        groups: "Dict[str, list]" = {}
+
+        # Önce track'lerden grupları çıkar (mevcut playlist'ler).
+        groups: Dict[str, list] = {}
         for t in self.tracks:
             group_name = self.playlist_name_for(t.path)
             groups.setdefault(group_name, []).append(t)
-        ordered = []
+
+        # Sonra diskteki tüm alt klasörleri gez; içinde şarkı OLMAYAN ama
+        # klasör olarak VAR olan playlist'leri de ekle. Bu sayede kullanıcı
+        # "Yeni çalma listesi" ile boş bir klasör oluşturduğunda, hemen
+        # sidebar'da görünür (şarkı atmasını beklemesi gerekmez).
+        if root.exists():
+            for entry in sorted(root.iterdir(), key=lambda p: p.name.lower()):
+                if not entry.is_dir():
+                    continue
+                if entry.name not in groups:
+                    groups[entry.name] = []
+
+        ordered: List[Tuple[str, list]] = []
         if self.DEFAULT_PLAYLIST_NAME in groups:
             ordered.append((self.DEFAULT_PLAYLIST_NAME, groups.pop(self.DEFAULT_PLAYLIST_NAME)))
         for name in sorted(groups.keys(), key=str.lower):
