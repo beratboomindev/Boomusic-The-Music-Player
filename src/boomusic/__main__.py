@@ -238,10 +238,15 @@ def main(argv: Optional[list] = None) -> int:
                 gui.quit()
             except Exception:
                 logger.exception("gui.quit() sırasında hata")
-        # Güvenlik ağı: normal kapanış birkaç saniyede tamamlanmazsa
-        # (beklenmeyen bir GTK/pywebview tuhaflığı vb.) süreci KOŞULSUZ
-        # sonlandır -- kullanıcı asla elle 'kill' yapmak zorunda kalmamalı.
-        threading.Timer(4.0, lambda: os._exit(0)).start()
+        # Güvenlik ağı: normal kapanış 1 saniyede tamamlanmazsa süreç
+        # SIGKILL ile zorla öldürülür (kullanıcı 'yarım saat kapanmadı'
+        # yaşamamalı). SIGKILL thread'ler dahil süreci garantili bitirir.
+        def _kill():
+            try:
+                os.kill(os.getpid(), signal.SIGKILL)
+            except Exception:
+                os._exit(0)
+        threading.Timer(1.0, _kill).start()
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)

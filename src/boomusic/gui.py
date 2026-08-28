@@ -317,31 +317,51 @@ class JsApi:
         self.app.config.update(nowplaying_visible=not self.app.config.settings.nowplaying_visible)
 
     def quit_app(self) -> None:
-        """Ayarlar panelindeki 'Çıkış' -- tepsideki 'Çıkış' ile aynı,
-        garantili kapanış mekanizmasını kullanır (bkz. tray.py._on_quit)."""
+        """Ayarlar panelindeki 'Çıkış' -- garantili kapanış.
+
+        pywebview'in `window.destroy()` çağrısı bazı durumlarda (webkit
+        çakışması, webview zaten kapanmışsa, vs.) sessizce takılıp
+        kalabiliyor. Bu yüzden 'normal yol' denenir; olmazsa 1 saniye
+        sonra süreç SIGKILL ile zorla öldürülür (tüm thread'ler dahil,
+        Python yorumlayıcısı durdurulur). SIGKILL'ın geri dönüşü yoktur
+        ama bu KAPANIŞ çağrısı; audio engine zaten shutdown edildi, log
+        dosyaları zaten yazıldı, geriye yazılacak bir şey kalmadı.
+        """
+        import signal as _sig
         if self.window is not None:
             try:
                 self.window.destroy()
             except Exception:
                 logger.exception("Pencere kapatılamadı (quit_app)")
-        threading.Timer(4.0, lambda: os._exit(0)).start()
+        # SIGKILL = 9; Linux'ta thread'ler dahil süreç garantili ölür.
+        # 1 saniye, 'normal kapanış' için tanınan süre; pywebview/GI bunu
+        # kullanmazsa zorla öldür.
+        def _kill():
+            try:
+                os.kill(os.getpid(), _sig.SIGKILL)
+            except Exception:
+                os._exit(0)
+        threading.Timer(1.0, _kill).start()
 
     def enter_just_icon_mode(self) -> bool:
-        """Ayarlar panelindeki 'Sadece İkon Moduna Geç' butonu için:
-        'boomusic-tray' launcher'ını arka planda başlatır ve GUI penceresini
-        gizler (kapatmaz; 'Boomusic'i Göster' denince tekrar açılabilir).
-        İki süreç AYNI ANDA çalışır -- farklı lock dosyaları kullanırlar,
-        birbirlerini engellemez. Just Icon örneği zaten çalışıyorsa hiçbir
-        şey yapmaz (kullanıcıya 'zaten çalışıyor' mesajı döner).
+        """Ayarlar panelindeki 'Sadece İkon Moduna Geç' butonu için.
+
+        Davranış (eski tasarımdan farklı):
+          1) 'boomusic-tray' launcher'ını arka planda başlatır.
+          2) ~0.7 sn sonra GUI SÜRECİNİ tamamen kapatır (SIGKILL ile).
+             Bu, artık iki ayrı tray simgesinin aynı anda durmaması
+             içindir; önceki tasarımda GUI sadece gizleniyordu, simgesi
+             arka planda kalmaya devam ediyordu.
+
+        Geri dönüş: kullanıcı yeni Just Icon simgesinin menüsündeki
+        'Boomusic'i Göster' öğesine tıkladığında tray subprocess olarak
+        yeni bir GUI başlatır (kendi lock dosyası var, çakışma olmaz).
         """
         launcher = os.path.expanduser("~/.local/bin/boomusic-tray")
         if not os.path.isfile(launcher):
             logger.error("boomusic-tray launcher bulunamadı: %s", launcher)
             return False
         try:
-            # setsid ile yeni oturum; pywebview'in ana thread'ini bloklamaz.
-            # Standart çıktılar /dev/null'a yönlendirilir (tray kendi logunu
-            # boomusic.log'a yazar). Nohup gerekmez çünkü setsid yeterli.
             subprocess.Popen(
                 [launcher],
                 stdout=subprocess.DEVNULL,
@@ -352,19 +372,21 @@ class JsApi:
         except Exception:
             logger.exception("boomusic-tray başlatılamadı")
             return False
-        # Kısa bir gecikme: Just Icon instance'ının lock dosyasını oluşturup
-        # tek-örnek kontrolünü geçmesine fırsat ver. Yoksa arka arkaya
-        # tıklamalarda kullanıcı iki Just Icon örneği başlatabilir.
-        threading.Timer(0.5, self._hide_after_just_icon_launch).start()
+        # Just Icon lock dosyasını oluşturması ve kullanıcının yeni simgeyi
+        # görmesi için yarım saniye bekle; sonra GUI'yi öldür.
+        threading.Timer(0.7, self._kill_after_just_icon_launch).start()
         return True
 
-    def _hide_after_just_icon_launch(self) -> None:
-        """enter_just_icon_mode'tan yarım saniye sonra GUI'yi gizle."""
-        if self.window is not None:
-            try:
-                self.window.hide()
-            except Exception:
-                logger.exception("Pencere gizlenemedi (just_icon_mode)")
+    def _kill_after_just_icon_launch(self) -> None:
+        """enter_just_icon_mode'tan ~0.7 sn sonra GUI SÜRECİNİ tamamen
+        sonlandırır. quit_app'tekiyle aynı SIGKILL mekanizması; sadece
+        pencere destroy ATLANIR çünkü zaten yeni bir GUI başlatılacak,
+        mevcut pencereyi gizlemeye/destroy etmeye gerek yok."""
+        import signal as _sig
+        try:
+            os.kill(os.getpid(), _sig.SIGKILL)
+        except Exception:
+            os._exit(0)
 
     def pick_music_folder(self) -> Optional[str]:
         if self.window is None:

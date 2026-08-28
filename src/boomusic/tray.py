@@ -94,6 +94,28 @@ class Tray:
                 self.gui.show()
             except Exception:
                 logger.exception("gui.show() başarısız")
+        else:
+            # Just Icon modunda pencere YOK -- bu menü öğesi tıklandığında
+            # yeni bir GUI örneği başlat (kullanıcı pencereye geri dönmek
+            # istiyor). Mevcut Just Icon süreci çalışmaya devam eder; yeni
+            # GUI ayrı bir lock dosyası kullandığı için çakışma olmaz.
+            # (İsterse kullanıcı daha sonra Just Icon simgesinden 'Çıkış'
+            # seçebilir.)
+            import subprocess
+            launcher = os.path.expanduser("~/.local/bin/boomusic")
+            if os.path.isfile(launcher):
+                try:
+                    subprocess.Popen(
+                        [launcher],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        stdin=subprocess.DEVNULL,
+                        start_new_session=True,
+                    )
+                except Exception:
+                    logger.exception("boomusic (GUI) başlatılamadı")
+            else:
+                logger.error("GUI launcher bulunamadı: %s", launcher)
 
     def _on_play_pause(self, icon, item):
         self.app.play_pause()
@@ -128,7 +150,16 @@ class Tray:
             icon.stop()
         except Exception:
             pass
-        threading.Timer(4.0, lambda: os._exit(0)).start()
+        # 1 saniye içinde süreç kapanmazsa SIGKILL ile zorla öldür. Normalde
+        # webview.start() veya tray.run() döndüğünde süreç zaten kapanmış
+        # olur; bu timer sadece 'sıkıştı' senaryosu için garanti.
+        import signal as _sig
+        def _kill():
+            try:
+                os.kill(os.getpid(), _sig.SIGKILL)
+            except Exception:
+                os._exit(0)
+        threading.Timer(1.0, _kill).start()
 
     def _on_play_track(self, path: str):
         def _cb(icon, item):
@@ -270,11 +301,13 @@ class Tray:
         items.append(pystray.Menu.SEPARATOR)
         items.append(pystray.MenuItem("🔄  Yeniden Tara", self._on_rescan))
         items.append(pystray.MenuItem("📁  Müzik Klasörünü Aç", self._on_open_music_folder))
-        if self._show_window_cb is not None or self.gui is not None:
-            # GUI örneği de çalışıyorsa 'Göster' öğesi ekle; yoksa Just Icon
-            # modunda gösterecek pencere olmadığı için bu öğe gizlenir.
-            items.append(pystray.Menu.SEPARATOR)
-            items.append(pystray.MenuItem("🪟  Boomusic'i Göster", self._on_show_window, default=True))
+        # Just Icon modunda HER ZAMAN 'Göster' öğesi göster: tıklandığında
+        # yeni bir GUI örneği subprocess olarak başlatılır (mevcut Just Icon
+        # süreci çalışmaya devam eder; farklı lock dosyaları sayesinde
+        # çakışma olmaz). GUI modunda gösteriyorsa sadece mevcut pencereyi
+        # öne getirir; o davranış zaten _on_show_window içinde.
+        items.append(pystray.Menu.SEPARATOR)
+        items.append(pystray.MenuItem("🪟  Boomusic'i Göster", self._on_show_window, default=True))
         items.append(pystray.Menu.SEPARATOR)
         items.append(pystray.MenuItem("⏻  Çıkış", self._on_quit))
         return pystray.Menu(*items)

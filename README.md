@@ -186,10 +186,14 @@ The script will:
   *Boomusic'i Göster* (only if a GUI instance is also running), *Çıkış*.
 
 **Switching between them at runtime:** open *Settings → Sadece İkon Moduna
-Geç*. This launches a `boomusic-tray` instance in the background and hides
-the current window. The GUI process keeps running in the background (so
-the audio doesn't stop). To come back: click the *Boomusic'i Göster* item
-inside the new tray icon's menu.
+Geç*. This:
+1. launches a `boomusic-tray` instance in the background;
+2. ~0.7 s later **kills the current GUI process entirely** (SIGKILL).
+
+So the GUI's tray icon disappears, leaving only the new Just Icon tray icon.
+To come back: click the *Boomusic'i Göster* item inside the new tray icon's
+menu — it `subprocess.Popen`s a fresh GUI (the old `boomusic-gui.lock` is
+released when the old process dies; the new GUI acquires it immediately).
 
 The two launchers run as **completely separate processes** with their own
 locks (`boomusic-gui.lock` and `boomusic-tray.lock`), so you can start both
@@ -211,9 +215,14 @@ CLI equivalent: `python3 -m boomusic --tray-only` (or `-t`).
   çalışıyorsa), *Çıkış*.
 
 **Çalışırken aralarında geçiş:** *Ayarlar → Sadece İkon Moduna Geç*. Bu
-buton arka planda bir `boomusic-tray` örneği başlatır ve pencereyi gizler.
-GUI süreci arka planda çalışmaya devam eder (ses kesilmez). Geri dönmek
-için yeni tepsi simgesinin menüsündeki *Boomusic'i Göster* öğesine tıkla.
+buton:
+1. Arka planda bir `boomusic-tray` örneği başlatır.
+2. ~0.7 sn sonra mevcut GUI SÜRECİNİ tamamen kapatır (SIGKILL).
+
+Sonuçta GUI'nin tray simgesi kaybolur, sadece yeni Just Icon simgesi kalır.
+Geri dönmek için Just Icon simgesinin menüsündeki *Boomusic'i Göster*
+öğesine tıkla — yeni bir GUI subprocess olarak başlatılır (eski
+`boomusic-gui.lock` eski süreç ölünce serbest kalır, yenisi hemen alır).
 
 İki launcher **tamamen ayrı süreçlerdir** (kendi lock dosyaları:
 `boomusic-gui.lock`, `boomusic-tray.lock`), aynı anda çalıştırılabilirler.

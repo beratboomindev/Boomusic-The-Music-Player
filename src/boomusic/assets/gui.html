@@ -1806,21 +1806,21 @@
     document.getElementById('btnQuitApp').addEventListener('click', function(){ window.pywebview.api.quit_app(); });
     document.getElementById('btnEnterJustIcon').addEventListener('click', function(){
       // Python tarafı: setsid ile boomusic-tray'ı arka planda başlatır,
-      // 0.5 sn sonra GUI'yi gizler. Geri dönmek için yeni tray simgesinde
-      // 'Boomusic'i Göster' öğesine tıklamak yeterli.
+      // 0.7 sn sonra GUI SÜRECİNİ tamamen kapatır (SIGKILL). Geri dönmek
+      // için yeni Just Icon simgesinde 'Boomusic'i Göster' öğesine tıkla
+      // (yeni bir GUI subprocess olarak başlatılır).
       var btn = this;
       btn.disabled = true;
       btn.textContent = currentLang === 'tr' ? 'Başlatılıyor...' : 'Launching...';
       window.pywebview.api.enter_just_icon_mode().then(function(ok){
         if (!ok){
           btn.disabled = false;
-          // Metni geri al
           btn.textContent = currentLang === 'tr' ? 'Sadece İkon Moduna Geç' : 'Switch to Just Icon Mode';
           if (window.pywebview && window.pywebview.api && window.pywebview.api.notify){
             try { window.pywebview.api.notify('Boomusic', 'boomusic-tray başlatılamadı (~/.local/bin/boomusic-tray eksik).'); } catch(_) {}
           }
         }
-        // Başarılıysa pencere kapanacak; butona gerek kalmadı.
+        // Başarılıysa süreç 0.7 sn'de kapanıyor; butona gerek kalmadı.
       });
     });
 
