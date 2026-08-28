@@ -270,8 +270,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-step "6/9 - Başlatıcı komut oluşturuluyor (~/.local/bin/boomusic)"
+step "6/9 - Başlatıcı komutlar oluşturuluyor (~/.local/bin/)"
 mkdir -p "$BIN_DIR"
+LAUNCHER_TRAY="$BIN_DIR/boomusic-tray"
     cat > "$LAUNCHER" <<EOF
 #!/usr/bin/env bash
 # Boomusic başlatıcı - update.sh tarafından otomatik oluşturuldu.
@@ -285,6 +286,21 @@ if [[ ! -x "$LAUNCHER" ]]; then
     fail "Başlatıcı komut oluşturulamadı: $LAUNCHER"
 fi
 ok "Oluşturuldu: $LAUNCHER"
+
+# Just Icon Mode için ayrı launcher.
+    cat > "$LAUNCHER_TRAY" <<EOF
+#!/usr/bin/env bash
+# Boomusic Just Icon (sadece tepsi simgesi) - update.sh tarafından otomatik oluşturuldu.
+export PULSE_PROP_application.name="Boomusic"
+export PULSE_PROP_application.icon_name="boomusic"
+cd "$APP_DIR" || exit 1
+exec "$VENV_DIR/bin/python3" -m boomusic --tray-only "\$@"
+EOF
+chmod +x "$LAUNCHER_TRAY"
+if [[ ! -x "$LAUNCHER_TRAY" ]]; then
+    fail "Tray-only başlatıcı oluşturulamadı: $LAUNCHER_TRAY"
+fi
+ok "Oluşturuldu: $LAUNCHER_TRAY"
 
 # ---------------------------------------------------------------------------
 step "7/9 - Varsayılan müzik klasörü"
@@ -313,6 +329,20 @@ Categories=AudioVideo;Audio;Player;
 StartupWMClass=boomusic
 EOF
 ok "Uygulama menüsüne eklendi: $APPLICATIONS_DIR/boomusic.desktop"
+
+# Just Icon Mode için ayrı .desktop girdisi.
+cat > "$APPLICATIONS_DIR/boomusic-tray.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Boomusic (Sadece İkon)
+Comment=Boomusic - Just Icon Mode (penceresiz, sadece tepsi simgesi)
+Exec=$LAUNCHER_TRAY
+Icon=$ICON_INSTALLED_PATH
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+StartupWMClass=boomusic
+EOF
+ok "Just Icon menüsü eklendi: $APPLICATIONS_DIR/boomusic-tray.desktop"
 
 # ---------------------------------------------------------------------------
 step "9/9 - Güncelleme tamamlandı"

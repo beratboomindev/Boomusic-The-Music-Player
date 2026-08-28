@@ -13,8 +13,10 @@ set -uo pipefail
 INSTALL_DIR="$HOME/.local/share/boomusic/install"
 BIN_DIR="$HOME/.local/bin"
 LAUNCHER="$BIN_DIR/boomusic"
+LAUNCHER_TRAY="$BIN_DIR/boomusic-tray"
 AUTOSTART_FILE="$HOME/.config/autostart/boomusic.desktop"
 APPLICATIONS_FILE="$HOME/.local/share/applications/boomusic.desktop"
+APPLICATIONS_TRAY_FILE="$HOME/.local/share/applications/boomusic-tray.desktop"
 CONFIG_DIR="$HOME/.config/boomusic"
 DATA_DIR="$HOME/.local/share/boomusic"
 
@@ -57,8 +59,10 @@ ask_yes_no() {
 printf "${BOLD}Boomusic kaldırılıyor...${RESET}\n\n"
 
 rm -f "$LAUNCHER" && ok "Başlatıcı komut kaldırıldı: $LAUNCHER"
+rm -f "$LAUNCHER_TRAY" && ok "Sadece-ikon başlatıcı kaldırıldı: $LAUNCHER_TRAY"
 rm -f "$AUTOSTART_FILE" && ok "Otomatik başlatma girişi kaldırıldı: $AUTOSTART_FILE"
 rm -f "$APPLICATIONS_FILE" && ok "Uygulama menüsü girişi kaldırıldı: $APPLICATIONS_FILE"
+rm -f "$APPLICATIONS_TRAY_FILE" && ok "Sadece-ikon menü girişi kaldırıldı: $APPLICATIONS_TRAY_FILE"
 if [[ -n "$DESKTOP_ICON_FILE" ]]; then
     rm -f "$DESKTOP_ICON_FILE" && ok "Masaüstü simgesi kaldırıldı: $DESKTOP_ICON_FILE"
 fi
@@ -73,7 +77,7 @@ info ""
 
 if ask_yes_no "Ayarları ve dinleme istatistiklerini de silmek ister misin? (müzik dosyaların ETKİLENMEZ)"; then
     rm -rf "$CONFIG_DIR"
-    rm -f "$DATA_DIR"/stats.json "$DATA_DIR"/boomusic.log* "$DATA_DIR"/boomusic.lock "$DATA_DIR"/CHANGELOG.md
+    rm -f "$DATA_DIR"/stats.json "$DATA_DIR"/boomusic.log* "$DATA_DIR"/boomusic*.lock "$DATA_DIR"/CHANGELOG.md
     # DATA_DIR'in altında install/ zaten kaldırıldı; klasör boşsa temizle.
     rmdir "$DATA_DIR" 2>/dev/null || true
     ok "Ayarlar ve istatistikler silindi."

@@ -172,33 +172,42 @@ The script will:
 
 ## Just Icon Mode / Sadece İkon Modu
 
-**EN:** Toggle *Settings → Just Icon Mode* ON. The window never appears
-again — the tray icon becomes your entire interface:
+**EN:** Just Icon Mode is a **separate, independent launcher** —
+`boomusic-tray` (or the *Boomusic (Sadece İkon)* entry in your app menu).
+It opens the same rich tray menu but **no window at all**. The full UI is
+inside that tray menu:
 - Now-playing title at the top
 - Play/Pause, Previous, Next
 - Shuffle toggle (checked state shows whether it's on)
 - Volume submenu: 0/10/20/.../100% presets, ±5 buttons, mute toggle
 - Playlists submenu: each playlist expands to its tracks; click to play
 - Rescan, open the music folder in your file manager
-- **Window Mode** (returns to the normal windowed app)
 - Quit
 
-The setting is persisted in `~/.config/boomusic/config.json` (`just_icon_mode: true`).
-Next launch will start directly in icon mode. To return: tray → *Pencere Moduna Dön*.
+The **GUI and Just Icon run as two completely separate processes** with
+their own locks (`boomusic-gui.lock` and `boomusic-tray.lock`), so you
+can start both at the same time and they won't conflict. If you only
+want one, just don't launch the other.
 
-**TR:** Ayarlar → *Sadece İkon Modu*'nu aç. Pencere bir daha açılmaz; tepsi simgesi
-tüm arayüzün olur:
+CLI equivalent: `python3 -m boomusic --tray-only` (or `-t`).
+
+**TR:** Sadece İkon Modu, **ayrı ve bağımsız bir başlatıcıdır** —
+`boomusic-tray` (veya uygulama menüsündeki *Boomusic (Sadece İkon)*
+girdisi). Aynı zengin tepsi menüsünü açar ama **pencere hiç açılmaz**:
 - Üstte "şu an çalıyor" başlığı
 - Oynat/Duraklat, Önceki, Sonraki
-- Karıştır aç/kapat (işareti durumu gösterir)
-- Ses alt menüsü: 0/10/20/.../100% preset'leri, ±5 düğmeleri, sustur aç/kapat
-- Çalma listeleri alt menüsü: her playlist genişler, tıkla çal
-- Yeniden tara, müzik klasörünü dosya yöneticisinde aç
-- **Pencere Moduna Dön** (normal pencereli uygulamaya dönüş)
+- Karıştır aç/kapat
+- Ses alt menüsü: preset'ler, ±5, sustur
+- Çalma listeleri alt menüsü: tıkla çal
+- Yeniden tara, klasör aç
 - Çıkış
 
-Ayar `~/.config/boomusic/config.json`'a kaydedilir (`just_icon_mode: true`).
-Sonraki açılışta doğrudan ikon modunda başlar. Geri dönmek için: tepsi → *Pencere Moduna Dön*.
+**GUI ve Just Icon tamamen ayrı süreçlerdir** (kendi lock dosyaları:
+`boomusic-gui.lock`, `boomusic-tray.lock`), aynı anda çalıştırılabilirler
+ve birbirleriyle çakışmazlar. Sadece birini istiyorsanız diğerini
+başlatmazsınız.
+
+CLI eşdeğeri: `python3 -m boomusic --tray-only` (veya `-t`).
 
 ---
 

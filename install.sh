@@ -341,8 +341,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-step "7/10 - Başlatıcı komut oluşturuluyor (~/.local/bin/boomusic)"
+step "7/10 - Başlatıcı komutlar oluşturuluyor (~/.local/bin/)"
 mkdir -p "$BIN_DIR"
+LAUNCHER_TRAY="$BIN_DIR/boomusic-tray"
     cat > "$LAUNCHER" <<EOF
 #!/usr/bin/env bash
 # Boomusic başlatıcı - install.sh tarafından otomatik oluşturuldu.
@@ -356,6 +357,22 @@ if [[ ! -x "$LAUNCHER" ]]; then
     fail "Başlatıcı komut oluşturulamadı: $LAUNCHER"
 fi
 ok "Oluşturuldu: $LAUNCHER"
+
+# Just Icon Mode için ayrı launcher: sadece tray açar, pencere hiç açılmaz.
+# Kullanıcı GUI aynı anda da çalıştırabilir (farklı lock dosyaları).
+    cat > "$LAUNCHER_TRAY" <<EOF
+#!/usr/bin/env bash
+# Boomusic Just Icon (sadece tepsi simgesi) - install.sh tarafından otomatik oluşturuldu.
+export PULSE_PROP_application.name="Boomusic"
+export PULSE_PROP_application.icon_name="boomusic"
+cd "$APP_DIR" || exit 1
+exec "$VENV_DIR/bin/python3" -m boomusic --tray-only "\$@"
+EOF
+chmod +x "$LAUNCHER_TRAY"
+if [[ ! -x "$LAUNCHER_TRAY" ]]; then
+    fail "Tray-only başlatıcı oluşturulamadı: $LAUNCHER_TRAY"
+fi
+ok "Oluşturuldu: $LAUNCHER_TRAY"
 
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     warn "$BIN_DIR PATH içinde görünmüyor."
@@ -380,7 +397,7 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-step "8/9 - Varsayılan müzik klasörü"
+step "8/10 - Varsayılan müzik klasörü"
 mkdir -p "$DEFAULT_MUSIC_DIR"
 ok "Müziklerini şu klasöre koyabilirsin: $DEFAULT_MUSIC_DIR"
 info "  (Sisteminizin dilindeki Belgeler klasörü otomatik bulundu; alt klasörler"
@@ -396,7 +413,7 @@ if [[ -f "$SCRIPT_DIR/CHANGELOG.md" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-step "9/9 - Uygulama menüsüne ekleniyor (kolay açılış)"
+step "9/10 - Uygulama menüsüne ekleniyor (kolay açılış)"
 # Bu, autostart'tan FARKLI: uygulamanın KDE/GNOME/rofi/wofi gibi her uygulama
 # başlatıcısında görünmesini sağlar (çift tıkla / arat, aç). Hiçbir yan etkisi
 # olmadığı için (sadece görünürlük) izin sormaya gerek yok.
@@ -413,6 +430,23 @@ Categories=AudioVideo;Audio;Player;
 StartupWMClass=boomusic
 EOF
 ok "Uygulama menüsüne eklendi: $APPLICATIONS_DIR/boomusic.desktop"
+
+# Just Icon Mode için ayrı .desktop girdisi; aynı anda ikisi birden
+# çalışabilir (farklı lock dosyaları). Bu girdi sayesinde uygulama
+# menüsünde "Boomusic (Sadece İkon)" diye ayrı bir kısayol görünür.
+cat > "$APPLICATIONS_DIR/boomusic-tray.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Boomusic (Sadece İkon)
+Comment=Boomusic - Just Icon Mode (penceresiz, sadece tepsi simgesi)
+Exec=$LAUNCHER_TRAY
+Icon=$ICON_INSTALLED_PATH
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+StartupWMClass=boomusic
+EOF
+ok "Just Icon menüsü eklendi: $APPLICATIONS_DIR/boomusic-tray.desktop"
+
 info "  Artık uygulama başlatıcından (KDE Kickoff, GNOME Overview, rofi/wofi, vb.)"
 info "  'Boomusic' araması yaparak da açabilirsin -- terminale yazmaya gerek yok."
 

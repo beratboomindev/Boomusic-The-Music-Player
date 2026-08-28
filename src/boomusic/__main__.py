@@ -1,7 +1,10 @@
 """Boomusic giriş noktası.
 
 Çalıştırma:
-    python3 -m boomusic
+    python3 -m boomusic                  # GUI pencere + tray
+    python3 -m boomusic --tray-only      # sadece tray (Just Icon Mode)
+    boomusic                              # GUI
+    boomusic-tray                         # sadece tray
 
 Bu dosya günlükleme (logging), tek-örnek (single instance) kilidi, sinyal
 yönetimi ve App + Tray + GUI penceresini birbirine bağlamaktan sorumludur.
@@ -14,19 +17,27 @@ pystray'in Linux'taki AppIndicator arka ucu VE pywebview'in Linux'taki GTK
 arka ucu, İKİSİ DE GTK/GLib tabanlıdır. Aynı süreç içinde, biri bir arka
 plan thread'inde diğeri ana thread'de olmak üzere İKİ AYRI GTK ana döngüsü
 (mainloop) çalıştırmak GTK'nın thread modeliyle güvenli değildir ve
-kilitlenmeye (sessizce takılıp kalmaya) yol açabilir -- yaşanan "uygulama
-açılmıyor, hata da yok" belirtisi tam olarak buna işaret ediyordu.
+kilitlenmeye (sessizce takılıp kalmaya) yol açabilir.
 
 Çözüm: GUI kullanılabiliyorsa, tepsi simgesi KENDİ mainloop'unu BAŞLATMAZ
 (``icon.run()`` değil); bunun yerine ``icon.run_detached()`` ile sadece
 KAYDEDİLİR, ve gerçek/tek ortak GTK döngüsünü ``webview.start()``
 (``gui.start()``) başlatır -- bu döngü hem pencerenin hem de tepsi
 simgesinin olaylarını birlikte işler. GUI hiç kullanılamıyorsa (örn.
-webkit2gtk kurulu değilse), tepsi eskisi gibi kendi (tek başına, güvenli)
+webkit2gtk kurulu değil), tepsi eskisi gibi kendi (tek başına, güvenli)
 arka plan thread'inde ``icon.run()`` ile çalışır.
+
+== İki mod aynı anda çalışabilir ==
+``--tray-only`` modu farklı bir lock dosyası kullanır (``boomusic-tray.lock``
+yerine ``boomusic-gui.lock``); bu sayede hem GUI hem de Just Icon modu aynı
+anda çalıştırılabilir. Birinin çökmesi diğerini etkilemez (her biri kendi
+App + Engine örneğini kurar; ses için libVLC iki kez başlatılır, bu Linux
+PulseAudio/PipeWire'da sorun değildir çünkü akış adı aynıdır, sistem
+bunları tek bir uygulamaymış gibi gruplayabilir).
 """
 from __future__ import annotations
 
+import argparse
 import fcntl
 import logging
 import logging.handlers
@@ -41,7 +52,8 @@ from . import notifier
 from .app import App
 from .config import default_data_dir
 
-LOCK_FILE_NAME = "boomusic.lock"
+LOCK_FILE_NAME_GUI = "boomusic-gui.lock"
+LOCK_FILE_NAME_TRAY = "boomusic-tray.lock"
 LOG_FILE_NAME = "boomusic.log"
 
 
@@ -64,9 +76,9 @@ def _setup_logging(data_dir: Path) -> None:
         root.addHandler(console)
 
 
-def _acquire_single_instance_lock(data_dir: Path):
+def _acquire_single_instance_lock(data_dir: Path, lock_name: str):
     data_dir.mkdir(parents=True, exist_ok=True)
-    lock_path = data_dir / LOCK_FILE_NAME
+    lock_path = data_dir / lock_name
     lock_file = open(lock_path, "w")
     try:
         fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -97,7 +109,20 @@ def _start_tray_thread(tray, tray_crashed: threading.Event, logger: logging.Logg
     return t
 
 
-def main() -> int:
+def main(argv: Optional[list] = None) -> int:
+    # CLI argümanlarını ayrıştır.
+    parser = argparse.ArgumentParser(
+        prog="boomusic",
+        description="Boomusic - The Music Player (Linux)",
+        add_help=True,
+    )
+    parser.add_argument(
+        "--tray-only", "-t", action="store_true",
+        help="Just Icon Mode: sadece sistem tepsisi simgesi; pencere hiç açılmaz.",
+    )
+    args = parser.parse_args(argv)
+    tray_only = bool(args.tray_only)
+
     # PulseAudio / PipeWire'da bu uygulamanın ses akışının "Boomusic"
     # olarak görünmesini sağlar (VLC ve pywebview/python3 yerine).
     os.environ.setdefault("PULSE_PROP_application.name", "Boomusic")
@@ -106,14 +131,20 @@ def main() -> int:
     data_dir = default_data_dir()
     _setup_logging(data_dir)
     logger = logging.getLogger("boomusic.main")
-    logger.info("=== Boomusic başlangıç dizisi başladı (pid=%s) ===", os.getpid())
+    mode_str = "sadece-tray (Just Icon)" if tray_only else "GUI + tray"
+    logger.info("=== Boomusic başlangıç dizisi başladı (pid=%s, mod=%s) ===", os.getpid(), mode_str)
 
-    lock_file = _acquire_single_instance_lock(data_dir)
+    # Mod-bazlı lock dosyası: GUI ve Tray aynı anda çalışabilsin.
+    lock_name = LOCK_FILE_NAME_TRAY if tray_only else LOCK_FILE_NAME_GUI
+    lock_file = _acquire_single_instance_lock(data_dir, lock_name)
     if lock_file is None:
-        logger.warning("Boomusic zaten çalışıyor; yeni örnek başlatılmadı.")
-        notifier.notify("Boomusic", "Boomusic zaten çalışıyor (tepsiye bakın).")
+        logger.warning("Bu mod zaten çalışıyor (%s); yeni örnek başlatılmadı.", lock_name)
+        if tray_only:
+            notifier.notify("Boomusic", "Just Icon modu zaten çalışıyor (tepsiye bakın).")
+        else:
+            notifier.notify("Boomusic", "Boomusic zaten çalışıyor (tepsiye bakın).")
         return 0
-    logger.info("[1/5] Tek-örnek kilidi alındı.")
+    logger.info("[1/5] Tek-örnek kilidi alındı (%s).", lock_name)
 
     try:
         app: Optional[App] = App()
@@ -123,17 +154,10 @@ def main() -> int:
         lock_file.close()
         return 1
 
-    # Just Icon Mode: config'de True ise uygulama PENCERESİZ başlar; tüm
-    # kontrol tepsi simgesindeki menüden yapılır. Ana thread bir Event'te
-    # bloklanır; kullanıcı 'Pencere Moduna Dön' seçince Event set edilir,
-    # tray durdurulur, ana thread uyanır, pencere oluşturulup gösterilir.
-    just_icon_mode = bool(app.config.settings.just_icon_mode)
-    if just_icon_mode:
-        logger.info("[2.5/5] just_icon_mode=AKTİF: pencere oluşturulmayacak.")
-
     # -- GUI penceresi nesnesini oluştur (henüz BAŞLATMIYORUZ) -----------------------
+    # tray_only modunda GUI hiç oluşturulmaz; sadece tray çalışır.
     gui = None
-    if not just_icon_mode:
+    if not tray_only:
         try:
             from .gui import GuiWindow
 
@@ -145,7 +169,7 @@ def main() -> int:
                 "Uygulama sadece tepsi simgesiyle devam edecek."
             )
     else:
-        logger.info("[3/5] just_icon_mode açık; GuiWindow atlanıyor.")
+        logger.info("[3/5] --tray-only: GuiWindow atlanıyor.")
 
     # -- Tray nesnesini oluştur (henüz BAŞLATMIYORUZ) --------------------------------
     tray = None
@@ -153,6 +177,10 @@ def main() -> int:
         from .tray import Tray
 
         tray = Tray(app, gui=gui)
+        # GUI modunda: tray menüsündeki 'Boomusic'i Göster' öğesi bu callback'i
+        # çağırarak pencereyi gösterir.
+        if gui is not None:
+            tray.set_show_window_callback(gui.show)
         logger.info("[4/5] Tray() oluşturuldu (simge HENÜZ görünmüyor, bu normal).")
     except Exception:
         logger.exception(
@@ -169,10 +197,6 @@ def main() -> int:
     tray_crashed = threading.Event()
     tray_thread: Optional[threading.Thread] = None
     tray_detached = False
-    # just_icon_mode'dan pencere moduna geçmek için ana thread bu event'i bekler.
-    enter_window_mode_event = threading.Event()
-    if tray is not None and not just_icon_mode:
-        tray.set_enter_window_mode_callback(enter_window_mode_event.set)
 
     if tray is not None and gui is not None:
         # GUI VE tray birlikte: GTK mainloop çakışmasını önlemek için tray'i
@@ -190,8 +214,8 @@ def main() -> int:
             tray_thread = _start_tray_thread(tray, tray_crashed, logger)
     elif tray is not None:
         # GUI yok: tray'in kendi başına, kendi thread'inde çalışması güvenlidir.
-        # Bu dal hem just_icon_mode=True durumunu, hem de webkit kurulu değilken
-        # otomatik düşülen durumu kapsar.
+        # Bu dal hem --tray-only modunu, hem de webkit kurulu değilken otomatik
+        # düşülen durumu kapsar.
         tray_thread = _start_tray_thread(tray, tray_crashed, logger)
 
     def _handle_signal(signum, _frame):
@@ -206,8 +230,6 @@ def main() -> int:
                 gui.quit()
             except Exception:
                 logger.exception("gui.quit() sırasında hata")
-        # Just Icon Mode'daysa Event'i de set et ki ana thread uyansın ve çıkış yapsın.
-        enter_window_mode_event.set()
         # Güvenlik ağı: normal kapanış birkaç saniyede tamamlanmazsa
         # (beklenmeyen bir GTK/pywebview tuhaflığı vb.) süreci KOŞULSUZ
         # sonlandır -- kullanıcı asla elle 'kill' yapmak zorunda kalmamalı.
@@ -218,60 +240,16 @@ def main() -> int:
 
     logger.info(
         "Boomusic başlatıldı (%d şarkı bulundu, ses hazır: %s, tray: %s, gui: %s, "
-        "tray_modu: %s, just_icon_mode: %s).",
+        "tray_modu: %s, mod: %s).",
         app.track_count(), app.engine.audio_ready, tray is not None, gui is not None,
         "paylaşılan-döngü (run_detached)" if tray_detached else ("kendi-thread'i" if tray_thread else "yok"),
-        just_icon_mode,
+        mode_str,
     )
 
     exit_code = 0
     gui_start_failed = False
     try:
-        if just_icon_mode and gui is None and tray is not None:
-            # --- SADECE İKON MODU: ana thread pencere açılmasını bekler ---
-            # Kullanıcı tray'de 'Pencere Moduna Dön' seçtiğinde tray callback'i
-            # bu event'i set eder; aşağıda uyanıp pencereyi oluştururuz. Çıkış
-            # (tray menüsündeki 'Çık' veya SIGTERM) yine event'i set eder;
-            # o zaman pencere moduna geçmeden uygulama kapanır.
-            logger.info("Just Icon Mode: ana thread pencere moduna geçiş bekliyor...")
-            entered = enter_window_mode_event.wait()
-            if not entered:
-                logger.info("Event iptal edildi, çıkılıyor.")
-            else:
-                if app.config.settings.just_icon_mode:
-                    # Event, çıkış için de set edilmiş olabilir (signal handler);
-                    # eğer hâlâ just_icon_mode=True ise kullanıcı ÇIKIŞ yolunu seçti.
-                    logger.info("Event set edildi ama just_icon_mode hâlâ açık -- çıkış yolu.")
-                else:
-                    # Kullanıcı pencere moduna dönmeyi seçti. Önce tray'i
-                    # durdur (run_detached olmadığı için stop() güvenli), sonra
-                    # pencere oluştur ve başlat.
-                    logger.info("Pencere moduna geçiliyor -- tray durduruluyor...")
-                    try:
-                        tray.stop()
-                    except Exception:
-                        logger.exception("tray.stop() sırasında hata")
-                    if tray_thread is not None:
-                        tray_thread.join(timeout=3)
-                    try:
-                        from .gui import GuiWindow
-                        gui = GuiWindow(app)
-                        logger.info("GuiWindow() oluşturuldu (just_icon_mode'dan dönüş).")
-                    except Exception:
-                        logger.exception(
-                            "Pencere moduna dönüş başarısız: GuiWindow oluşturulamadı. "
-                            "Uygulama kapanıyor."
-                        )
-                        exit_code = 1
-                    if gui is not None:
-                        try:
-                            logger.info("GUI mainloop'u başlatılıyor...")
-                            gui.start()
-                            logger.info("GUI mainloop'u normal şekilde sona erdi.")
-                        except Exception:
-                            logger.exception("GUI başlatılamadı (just_icon_mode'dan dönüş).")
-                            exit_code = 1
-        elif gui is not None:
+        if gui is not None:
             try:
                 logger.info("GUI mainloop'u başlatılıyor (webview.start) -- ana thread burada bloke olacak...")
                 gui.start()
@@ -288,22 +266,20 @@ def main() -> int:
                 except Exception:
                     logger.exception("gui sonrası tray.stop() sırasında hata")
 
-        if gui is None or gui_start_failed:
+        if tray_only or gui is None or gui_start_failed:
             if gui_start_failed:
                 if tray is not None and tray_thread is None:
-                    # run_detached denenmiş olabilir ama GUI çöktüğü için
-                    # gerçek bir döngü hiç çalışmamış olabilir; tray'i şimdi
-                    # klasik (kendi thread'i) modda TEKRAR başlatıyoruz.
                     logger.info("Tray, klasik (kendi thread'i) modda yeniden başlatılıyor...")
                     try:
                         tray.stop()
                     except Exception:
                         pass
                     tray_thread = _start_tray_thread(tray, tray_crashed, logger)
+            # Just Icon Mode veya GUI olmadan: tray thread'ini bekle.
             if tray_thread is not None:
                 while tray_thread.is_alive():
                     tray_thread.join(timeout=0.5)
-            elif gui_start_failed and tray is None:
+            elif (tray_only or gui_start_failed) and tray is None:
                 exit_code = 1
 
         if tray_crashed.is_set():
