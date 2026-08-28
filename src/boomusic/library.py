@@ -136,33 +136,42 @@ class Library:
     def playlists(self):
         """Diskteki tüm alt klasörleri çalma listesi olarak listeler.
 
-        Sadece içinde şarkı olan klasörler DEĞİL, kullanıcının bilinçli
-        oluşturduğu (içi boş da olsa) her alt klasör gösterilir. Mantık:
-        "Genel" (müzik kökünün kendisi) her zaman ilk sırada, sonra
-        diskteki alt klasörler alfabetik sırayla. Sıralama, her playlist'in
-        içindeki parça sayısını az önce hesaplanmış değerden alır;
-        boş olanlar 0 gösterir.
+        Üç kaynaktan üretilir:
+        1) Track'lerin bulunduğu klasörler (mevcut tasarım).
+        2) İçinde şarkı olmasa bile diskte VAR olan alt klasörler ("yeni
+           çalma listesi" ile oluşturulmuş ama henüz şarkı atılmamış
+           olanlar dahil).
+        3) "Genel" (müzik kökünün kendisi) -- eğer kök-dizinde şarkı
+           varsa zaten 1. maddeden gelir; ama kullanıcı tüm müziğini
+           alt klasörlere koymuşsa bile "Genel" listenin VAR olduğu
+           gösterilir (içine sürükle-bırak ile şarkı atabilsin diye).
+
+        "Genel" her zaman ilk sırada, sonra diskteki alt klasörler
+        alfabetik sırayla. Boş playlist'ler 0 şarkı gösterir.
         """
         if self._playlist_cache is not None:
             return self._playlist_cache
         root = Path(self.folder).expanduser()
 
-        # Önce track'lerden grupları çıkar (mevcut playlist'ler).
+        # Önce track'lerden grupları çıkar.
         groups: Dict[str, list] = {}
         for t in self.tracks:
             group_name = self.playlist_name_for(t.path)
             groups.setdefault(group_name, []).append(t)
 
         # Sonra diskteki tüm alt klasörleri gez; içinde şarkı OLMAYAN ama
-        # klasör olarak VAR olan playlist'leri de ekle. Bu sayede kullanıcı
-        # "Yeni çalma listesi" ile boş bir klasör oluşturduğunda, hemen
-        # sidebar'da görünür (şarkı atmasını beklemesi gerekmez).
+        # klasör olarak VAR olan playlist'leri de ekle (yeni oluşturulmuş
+        # boş playlist'ler dahil).
         if root.exists():
             for entry in sorted(root.iterdir(), key=lambda p: p.name.lower()):
                 if not entry.is_dir():
                     continue
                 if entry.name not in groups:
                     groups[entry.name] = []
+
+        # "Genel" her zaman listede olsun; kullanıcı tüm şarkılarını alt
+        # klasörlere koymuş olsa bile buraya sürükle-bırak yapabilsin.
+        groups.setdefault(self.DEFAULT_PLAYLIST_NAME, [])
 
         ordered: List[Tuple[str, list]] = []
         if self.DEFAULT_PLAYLIST_NAME in groups:
