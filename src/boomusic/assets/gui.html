@@ -771,7 +771,7 @@
     padding: 6px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
     display: none;
-    overflow: hidden;
+    overflow: visible;
     animation: ctxMenuIn 0.12s cubic-bezier(0.2, 0.7, 0.3, 1);
     transform-origin: top left;
   }
@@ -832,7 +832,8 @@
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
     display: none;
   }
-  .ctx-submenu:hover .ctx-submenu-panel { display: block; }
+  .ctx-submenu:hover .ctx-submenu-panel,
+  .ctx-submenu-panel:hover { display: block; }
   .ctx-header {
     padding: 6px 12px 4px;
     font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -1158,6 +1159,7 @@
       ctx_add_to_playlist: 'Şu playliste ekle',
       ctx_added_to: 'Eklendi:',
       ctx_no_playlists: 'Başka playlist yok',
+      ctx_loading: 'Yükleniyor…',
       ctx_show_file: 'Dosyayı göster',
       ctx_remove_from_device: 'Cihazdan kaldır',
       ctx_remove_confirm: 'Bu şarkıyı diskten silmek istediğine emin misin?',
@@ -1247,6 +1249,7 @@
       ctx_add_to_playlist: 'Add to playlist',
       ctx_added_to: 'Added to:',
       ctx_no_playlists: 'No other playlists',
+      ctx_loading: 'Loading…',
       ctx_show_file: 'Show in file manager',
       ctx_remove_from_device: 'Remove from device',
       ctx_remove_confirm: 'Delete this track from disk?',
@@ -1604,7 +1607,7 @@
 
     // Şu playliste ekle (alt menü) — şu anki playlist HARİÇ
     var currentPl = (state && state.selected_playlist) || null;
-    var submenuItems = [];
+    var submenuItems = [];  // boş; panel asenkron doldurulur (placeholder ilk başta gösterilir)
     var submenuPanelRef = null;  // Panel referansını sakla
     if (window.pywebview && window.pywebview.api && window.pywebview.api.get_all_playlists) {
       // Playlist listesi asenkron — açılırken yükle
@@ -1639,9 +1642,13 @@
     items.push({
       icon: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>',
       label: t('ctx_add_to_playlist'),
-      submenu: submenuItems.length ? submenuItems : [],  // boş olsa bile panel gösterilecek (asenkron)
+      submenu: submenuItems,
       onSubmenuCreated: function(panel) {
         submenuPanelRef = panel;  // Panel referansını kaydet
+        // İlk anda "yükleniyor" placeholder'ı göster ki boş panel
+        // kullanıcıyı yanıltmasın; API cevabı gelince .innerHTML ile
+        // gerçek içerik yer alır.
+        panel.innerHTML = '<div class="ctx-empty">'+escapeHtml(t('ctx_loading') || '...')+'</div>';
       }
     });
 

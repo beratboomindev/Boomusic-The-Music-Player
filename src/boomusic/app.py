@@ -633,28 +633,45 @@ class App:
     def delete_playlist(self, name: str) -> None:
         """Playlist'in klasörünü tamamen siler (tüm şarkılar + meta).
         Eğer silinen playlist o an seçiliyse 'Genel'e geçilir; silinen
-        playlist'te çalan şarkı varsa engine durdurulur."""
+        playlist'te çalan şarkı varsa engine durdurulur.
+
+        JS köprüsü `.then(refresh)` ile hemen ardından state çektiği
+        için (silinen playlist menüde gözükmesin diye) BURADA işin
+        bitmesini bekliyoruz. Normalde _submit fire-and-forget; ama
+        bu çağrı kısa (rmtree + rescan) ve pywebview köprüsü ana
+        thread'de DEĞİL, ayrı bir thread'de — bu yüzden beklemek
+        GUI'yi bloklamaz, sadece bridge thread'ini (max 10s)."""
+        done = threading.Event()
+        ok_box = {"ok": True}
         def _worker():
-            if self._current_playlist == name:
-                self._current_playlist = None
-                self._current_playlist_tracks = []
-            # Silinen playlist'te çalan şarkı varsa durdur
-            cur = self.engine.current_path()
-            if cur:
-                try:
-                    # cur playlist'te miydi?
-                    cur_pl = self.library.playlist_name_for(cur)
-                    if cur_pl == name:
-                        self.engine.stop()
-                except Exception:
-                    pass
             try:
-                self.library.delete_playlist(name)
-            except ValueError as e:
-                logger.warning("delete_playlist başarısız: %s", e)
-                return
-            self._submit(self._do_rescan)
+                if self._current_playlist == name:
+                    self._current_playlist = None
+                    self._current_playlist_tracks = []
+                # Silinen playlist'te çalan şarkı varsa durdur
+                cur = self.engine.current_path()
+                if cur:
+                    try:
+                        cur_pl = self.library.playlist_name_for(cur)
+                        if cur_pl == name:
+                            self.engine.stop()
+                    except Exception:
+                        pass
+                try:
+                    self.library.delete_playlist(name)
+                except ValueError as e:
+                    logger.warning("delete_playlist başarısız: %s", e)
+                    ok_box["ok"] = False
+                    return
+                # Rescan'ı KENDİMİZ çağırıp bitmesini bekle; bu sayede
+                # JS'in hemen ardından get_state() çekmesi fresh data görür.
+                self._do_rescan()
+            finally:
+                done.set()
         self._submit(_worker)
+        # pywebview köprüsü ayrı thread'de çalışır; beklemek GUI'yi
+        # bloklamaz. 10s üst limit: sonsuz bekleme koruması.
+        done.wait(timeout=10.0)
 
     def get_all_playlists(self) -> list:
         """Tüm playlist'lerin adlarını düz liste olarak döner (context menu
