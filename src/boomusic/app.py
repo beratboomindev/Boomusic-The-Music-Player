@@ -612,7 +612,18 @@ class App:
         return self.library.set_cover_from_file(name, source_path)
 
     def add_file_to_playlist(self, playlist_name: str, source_path: str, display_name: str, artist: str) -> None:
-        self._submit(lambda: self._do_add_file_to_playlist(playlist_name, source_path, display_name, artist))
+        """Dosyayı playlist'e ekler. JS köprüsünde refresh() hemen
+        ardından çağrılabileceği için işin bitmesi beklenir
+        (delete_Playlist ile aynı sebep: bridge thread'inde beklemek
+        GUI'yi bloklamaz)."""
+        done = threading.Event()
+        def _worker():
+            try:
+                self._do_add_file_to_playlist(playlist_name, source_path, display_name, artist)
+            finally:
+                done.set()
+        self._submit(_worker)
+        done.wait(timeout=10.0)
 
     def remove_track(self, path: str) -> bool:
         """Bir şarkıyı diskten siler. Worker'da çalışır: eğer o an
@@ -708,7 +719,9 @@ class App:
         dest.write_bytes(raw)
         if artist:
             self.library.set_track_meta(playlist_name, dest.name, display_name, artist)
-        self._submit(self._do_rescan)
+        # Direkt çağır (sıraya ekleme); çağıran zaten işin bitmesini
+        # bekliyor, sıraya atarsak çağıran dönmeden rescan çalışmaz.
+        self._do_rescan()
 
     def tracks_in_playlist(self, name: Optional[str]) -> List[TrackEntry]:
         """Belirli bir 'çalma listesi'ndeki şarkılar. name=None

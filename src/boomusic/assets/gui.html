@@ -1159,6 +1159,8 @@
       ctx_add_to_playlist: 'Şu playliste ekle',
       ctx_added_to: 'Eklendi:',
       ctx_no_playlists: 'Başka playlist yok',
+      ctx_no_playlists_hint: 'Başka playlist yok — yeni oluşturabilirsin',
+      ctx_add_here: 'buraya',
       ctx_loading: 'Yükleniyor…',
       ctx_show_file: 'Dosyayı göster',
       ctx_remove_from_device: 'Cihazdan kaldır',
@@ -1249,6 +1251,8 @@
       ctx_add_to_playlist: 'Add to playlist',
       ctx_added_to: 'Added to:',
       ctx_no_playlists: 'No other playlists',
+      ctx_no_playlists_hint: 'No other playlists — you can create a new one',
+      ctx_add_here: 'here',
       ctx_loading: 'Loading…',
       ctx_show_file: 'Show in file manager',
       ctx_remove_from_device: 'Remove from device',
@@ -1605,24 +1609,52 @@
       });
     }
 
-    // Şu playliste ekle (alt menü) — şu anki playlist HARİÇ
+    // Şu playliste ekle (alt menü) — mevcut playlist DAHİL (kullanıcı
+    // kendi playlist'ine de ekleyebilsin; backend no-op yapıyor zaten
+    // çünkü dosya zaten oradaysa). Eğer hiç başka playlist yoksa
+    // 'Yeni oluştur' mesajı göster.
     var currentPl = (state && state.selected_playlist) || null;
     var submenuItems = [];  // boş; panel asenkron doldurulur (placeholder ilk başta gösterilir)
     var submenuPanelRef = null;  // Panel referansını sakla
     if (window.pywebview && window.pywebview.api && window.pywebview.api.get_all_playlists) {
       // Playlist listesi asenkron — açılırken yükle
       window.pywebview.api.get_all_playlists().then(function(names){
-        var filtered = (names || []).filter(function(n){ return n !== currentPl; });
         var sm = submenuPanelRef;  // Referansı kullan
         if (!sm) return;
         sm.innerHTML = '';
-        if (!filtered.length){
-          var empty = document.createElement('div');
-          empty.className = 'ctx-empty';
-          empty.textContent = t('ctx_no_playlists');
-          sm.appendChild(empty);
-        } else {
-          filtered.forEach(function(plName){
+        if (!names || !names.length){
+          // Hiç playlist yok — sadece "Genel" var gibi bir durum. Yine de
+          // kullanıcıya "buraya ekle" seçeneği sun ki en azından
+          // mevcut playlist'e ekleyebilsin.
+          var hint = document.createElement('div');
+          hint.className = 'ctx-empty';
+          hint.textContent = t('ctx_no_playlists_hint') || 'Başka playlist yok';
+          sm.appendChild(hint);
+        }
+        // Mevcut playlist'i en üstte "buraya ekle" olarak göster.
+        if (currentPl){
+          var addHere = document.createElement('button');
+          addHere.className = 'ctx-item';
+          addHere.type = 'button';
+          addHere.innerHTML = '<svg class="ctx-item-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="ctx-item-label">'+escapeHtml(currentPl)+'</span><span class="ctx-item-kbd">'+escapeHtml(t('ctx_add_here') || 'buraya')+'</span>';
+          addHere.addEventListener('click', function(){
+            closeContextMenu();
+            var display = name || path.split('/').pop().replace(/\.[^.]+$/, '');
+            window.pywebview.api.add_file_to_playlist(currentPl, path, display, '').then(function(){
+              showToast(t('ctx_added_to') + ' ' + currentPl);
+            });
+          });
+          sm.appendChild(addHere);
+        }
+        // Diğer playlist'ler (mevcut hariç)
+        var others = (names || []).filter(function(n){ return n !== currentPl; });
+        if (others.length){
+          if (currentPl){
+            var sep = document.createElement('div');
+            sep.className = 'ctx-sep';
+            sm.appendChild(sep);
+          }
+          others.forEach(function(plName){
             var it = document.createElement('button');
             it.className = 'ctx-item';
             it.type = 'button';
