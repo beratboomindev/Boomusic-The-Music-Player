@@ -45,6 +45,12 @@ No doubt. **Trust the process.**
 - **YT-dlp Support** — Search, download, and play songs from YouTube directly in Boomusic.
 - **Drag-Drop Song** — Drag and drop audio files into your playlists. Manually set title and artist.
 - **Playlist Feature** — Create unlimited playlists with unlimited songs. Add custom cover images.
+- **Right-Click Context Menus** — Right-click any track to play, play next,
+  copy its file path or YouTube link, add it to another playlist, reveal it
+  in your file manager, or delete it from disk. Right-click any playlist in
+  the sidebar to open, rename, shuffle-play, or delete it. Dangerous
+  actions (delete track / delete playlist) use a themed confirm modal
+  instead of the native GTK dialog so they match the rest of the UI.
 - **Smart Shuffle** — Our shuffle algorithm ensures the same song won't play again until all songs in the playlist have been played. Once all songs have been played, the algorithm resets.
 - **Listening Statistics** — Boomusic tracks how many times and how long you've listened to each song.
 - **Only Songs Filter** — Toggle the ♪ button to show only audio files (mp3/flac/ogg/wav).
@@ -101,6 +107,13 @@ At version 1.7+: **DeepSeek Flash 4 Free OpenCode Zen** (credit limits forced th
 - **YT-dlp Desteği** — Boomusic içinden YouTube'da şarkı ara, indir ve çal.
 - **Sürükle-Bırak Şarkı** — Ses dosyasını playlist'e sürükle, adını ve sanatçısını manuel düzenle.
 - **Playlist Özelliği** — İstediğin kadar playlist oluştur, istediğin kadar şarkı ekle. Kapak resmi ata.
+- **Sağ Tık Menüleri** — Herhangi bir şarkıya sağ tıkla: çal, sıradaki
+  olarak çal, dosya yolunu veya YouTube bağlantısını kopyala, başka bir
+  playlist'e ekle, dosya yöneticisinde göster ya da diskten sil.
+  Sidebar'daki herhangi bir playlist'e sağ tıkla: aç, yeniden adlandır,
+  karıştır ve çal, veya sil. Tehlikeli işlemler (şarkı sil / playlist sil)
+  için tarzımıza uygun onay modal'ı kullanılıyor (native GTK dialog'u
+  değil), böylece UI ile birebir uyum sağlıyor.
 - **Boomin Tarzı Karışık Çalma (Smart Shuffle)** — Aynı şarkı, playlist'teki diğer tüm şarkılar çalınmadan tekrar çalmaz. Tüm şarkılar çalındığında algoritma sıfırlanır.
 - **Dinleme İstatistikleri** — Hangi şarkıyı kaç kere ve kaç dakika dinlediğinin kaydı tutulur.
 - **Sadece Şarkılar Filtresi** — ♪ düğmesi ile playlist'te sadece ses dosyalarını göster (mp3/flac/ogg/wav).
