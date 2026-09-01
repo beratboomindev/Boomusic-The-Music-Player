@@ -518,29 +518,32 @@
     width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm);
     background: var(--bg-hover); margin-bottom: 10px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
+    position: relative;
   }
-  .home-card-cover img { width: 100%; height: 100%; object-fit: cover; }
-  .home-card-cover .icon { width: 28px; height: 28px; color: var(--text-dim); }
+  .home-card-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .home-card-cover .icon { width: 32px; height: 32px; color: var(--text-dim); display: block; }
   /* Cover için eklenen <span class="center-cover-placeholder"> flex
      child olarak tam kaplasın; aksi halde inline span flex container'ı
      bozup ikonu sol-üste yapıştırıyor. */
   .home-card-cover > .center-cover-placeholder {
     display: flex; align-items: center; justify-content: center;
     width: 100%; height: 100%;
+    position: absolute; inset: 0;
+    margin: 0;
   }
-  .home-card-cover > .center-cover-placeholder .icon { width: 32px; height: 32px; }
-  /* Aynı sorun sidebar'daki playlist-item'lar için de geçerli; .pl-cover
-     küçük ama yine de span'in flex child olarak davranması gerek. */
-  .pl-cover {
+  .home-card-cover > .center-cover-placeholder > svg { display: block; }
+  /* Sidebar playlist-item .pl-cover: küçük kapak (40×40 civarı), ama
+     içindeki placeholder span yine flex child olarak tam kaplasın. */
+  .pl-cover.is-cover-sm {
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
   }
-  .pl-cover > .pl-cover-placeholder {
+  .pl-cover.is-cover-sm > .pl-cover-placeholder {
     display: flex; align-items: center; justify-content: center;
     width: 100%; height: 100%;
   }
   /* Now-playing ve liste başlığındaki büyük kapak için de aynı şey. */
-  .np-cover > .np-cover-placeholder,
+  .np-cover.is-cover-np > .np-cover-placeholder,
   .pl-header-cover > .placeholder {
     display: flex; align-items: center; justify-content: center;
     width: 100%; height: 100%;
@@ -1894,7 +1897,15 @@
   }
 
   function setCoverImg(el, uri, size){
-    if (size === 'small') el.className = 'pl-cover';
+    // Boyut belirlemek için kullanılan class'ı AYNI anda ekle (orijinal
+    // class'ı —örneğin .home-card-cover, .np-cover— SİLME). Eski kod
+    // `el.className = 'pl-cover'` yapıyordu; bu ana sayfadaki kartların
+    // boyutlandırma class'ını silip placeholder'ı viewport köşesine
+    // yapıştırıyordu.
+    var sizeCls = (size === 'small') ? 'is-cover-sm'
+                : (size === 'large') ? 'is-cover-lg'
+                : 'is-cover-np';
+    if (!el.classList.contains(sizeCls)) el.classList.add(sizeCls);
     if (uri){
       el.innerHTML = '<img src="'+escapeHtml(uri)+'" style="width:100%;height:100%;object-fit:cover;">';
     } else {
