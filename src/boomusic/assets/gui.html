@@ -521,6 +521,14 @@
   }
   .home-card-cover img { width: 100%; height: 100%; object-fit: cover; }
   .home-card-cover .icon { width: 28px; height: 28px; color: var(--text-dim); }
+  /* Cover için eklenen <span class="center-cover-placeholder"> flex
+     child olarak tam kaplasın; aksi halde inline span flex container'ı
+     bozup ikonu sol-üste yapıştırıyor. */
+  .home-card-cover > .center-cover-placeholder {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+  }
+  .home-card-cover > .center-cover-placeholder .icon { width: 32px; height: 32px; }
   .home-card-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-card-sub { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* Search results */
