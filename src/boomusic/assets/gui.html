@@ -529,6 +529,22 @@
     width: 100%; height: 100%;
   }
   .home-card-cover > .center-cover-placeholder .icon { width: 32px; height: 32px; }
+  /* Aynı sorun sidebar'daki playlist-item'lar için de geçerli; .pl-cover
+     küçük ama yine de span'in flex child olarak davranması gerek. */
+  .pl-cover {
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .pl-cover > .pl-cover-placeholder {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+  }
+  /* Now-playing ve liste başlığındaki büyük kapak için de aynı şey. */
+  .np-cover > .np-cover-placeholder,
+  .pl-header-cover > .placeholder {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+  }
   .home-card-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-card-sub { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* Search results */
@@ -1524,7 +1540,53 @@
     var top  = (y + h + pad > vh) ? Math.max(pad, y - h) : y;
     ctxMenuEl.style.left = left + 'px';
     ctxMenuEl.style.top  = top  + 'px';
+
+    // Submenu panelleri ana menünün sağına açılır (left:100%); sağda
+    // yeterli yer yoksa sola açılsın, ayrıca dikey olarak da viewport'a
+    // sığsın. Hover'da JS hızlı tepki versin diye her panel için veri
+    // hazırlıyoruz (submenu açılınca reis submenu'yü yeniden konumlar).
+    ctxMenuEl.querySelectorAll('.ctx-submenu-panel').forEach(function(panel){
+      // Eğer sola açılacaksa, ana menünün soluna yaslan; dikey olarak
+      // parent item'in üstünden başla.
+      var parentItem = panel.parentElement;
+      var itemRect = parentItem.getBoundingClientRect();
+      var wouldRight = left + w + panel.offsetWidth + pad;
+      if (wouldRight > vw){
+        panel.style.left = 'auto';
+        panel.style.right = '100%';
+        panel.style.top = '0px';
+      } else {
+        panel.style.left = '100%';
+        panel.style.right = 'auto';
+        panel.style.top = '0px';
+      }
+      // Dikey clamp: panel yüksekliği viewport'u aşıyorsa içeriden
+      // scroll yapılsın (max-height zaten 320px; ama yine de ana menü
+      // ile birlikte taşarsa item'ı aşağı kaydır).
+      panel.dataset.dir = (wouldRight > vw) ? 'left' : 'right';
+      panel.dataset.itemTop = itemRect.top;
+    });
   }
+
+  // Submenu açılırken (display:block olduğunda) gerçek pozisyon
+  // hesabı: yatay yön dataset'ten, dikey yön item rect'inden okunur.
+  function repositionSubmenu(panel){
+    var vh = window.innerHeight;
+    var pad = 8;
+    var itemTop = parseFloat(panel.dataset.itemTop || '0');
+    var ph = panel.offsetHeight;
+    if (itemTop + ph + pad > vh){
+      panel.style.top = Math.max(pad, vh - ph - itemTop - pad) + 'px';
+    } else {
+      panel.style.top = '0px';
+    }
+  }
+
+  // Hover'da submenu görünür olduğunda konumunu son ayarla.
+  document.addEventListener('mouseover', function(e){
+    var panel = e.target.closest && e.target.closest('.ctx-submenu-panel');
+    if (panel && panel.offsetParent !== null) repositionSubmenu(panel);
+  });
 
   function closeContextMenu() {
     if (!ctxMenuEl) ctxMenuEl = document.getElementById('ctxMenu');
