@@ -260,11 +260,42 @@ step "5/10 - Anthropic Serif font dosyası indiriliyor (çevrimdışı kullanım
 FONT_DIR="$APP_DIR/boomusic/assets/fonts"
 mkdir -p "$FONT_DIR"
 if command -v curl >/dev/null 2>&1; then
-  FONT_URL="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c66fc489e-C-BHYa_K.woff2"
-  if curl -sL -o "$FONT_DIR/anthropic_serif.woff2" "$FONT_URL"; then
-    ok "İndirildi: anthropic_serif.woff2"
-  else
-    warn "Anthropic Serif indirilemedi (internet?); Georgia yedek font olarak kullanılacak."
+  # Birden fazla mirror dene: Anthropic'in CDN'i coğrafi olarak
+  # kısıtlı olabilir veya zaman zaman 5xx döndürebilir; bir URL
+  # başarısız olursa diğerine düş.  Hiçbiri çalışmazsa font zaten
+  # opsiyonel — Georgia yedeği devreye girer.
+  FONT_URLS=(
+    # Mevcut stabil build (1.7.2 ile birlikte gelen).
+    "https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c66fc489e-C-BHYa_K.woff2"
+    # claude.ai tarafından Eylül 2026'da aktif olarak yüklenen build.
+    # Hash rotasyona uğrarsa bu listedeki sıraya göre diğerlerini
+    # deneriz; ilk başarılı olanı kullanırız.
+    "https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c66fc489e-2VcCjn5t.woff2"
+  )
+  FONT_DONE=0
+  for try_url in "${FONT_URLS[@]}"; do
+    # -f: HTTP hata kodlarında başarısız say; --max-time 20s timeout.
+    if curl -fsSL --max-time 20 --retry 2 -o "$FONT_DIR/anthropic_serif.woff2.tmp" "$try_url" \
+       && [ -s "$FONT_DIR/anthropic_serif.woff2.tmp" ]; then
+      # Boyut kontrolü: 0-byte ya da 1 KB altı dosyalar muhtemelen hata sayfası.
+      size=$(wc -c < "$FONT_DIR/anthropic_serif.woff2.tmp")
+      if [ "$size" -ge 10000 ]; then
+        mv "$FONT_DIR/anthropic_serif.woff2.tmp" "$FONT_DIR/anthropic_serif.woff2"
+        ok "İndirildi: anthropic_serif.woff2 ($size byte, $try_url)"
+        FONT_DONE=1
+        break
+      else
+        rm -f "$FONT_DIR/anthropic_serif.woff2.tmp"
+        warn "URL'den beklenen font boyutu gelmedi ($size byte): $try_url"
+      fi
+    else
+      rm -f "$FONT_DIR/anthropic_serif.woff2.tmp"
+      warn "Font indirilemedi: $try_url"
+    fi
+  done
+  if [ "$FONT_DONE" -eq 0 ]; then
+    warn "Anthropic Serif font hiçbir kaynaktan indirilemedi (internet/erişim sorunu?)."
+    warn "Georgia yedek font olarak kullanılacak."
   fi
 else
   warn "curl bulunamadı; font indirme atlandı. Georgia yedek font olarak kullanılacak."
