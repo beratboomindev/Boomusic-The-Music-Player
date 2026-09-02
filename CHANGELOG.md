@@ -6,43 +6,14 @@ bir kopyası `~/.local/share/boomusic/CHANGELOG.md` yolunda, yani
 
 ---
 
-## v1.7.3 — Playlist context menüsü düzeltmeleri + Just Icon dönüş fix + bağımlılık hardening
+## v1.7.3 — Sağ tık menü, Just Icon modu ve birkaç sorun düzeltmesi
 
-### Düzeltilen hatalar
-- **"Şu playliste ekle" alt menüsü boş kalıyordu.** Sağ tık menüsündeki
-  "Add to playlist" öğesinin alt menüsünde playlist isimleri hiç
-  görünmüyordu (panel tamamen boş). Kök neden: `buildContextMenuDOM`
-  içinde `onSubmenuCreated` parametre olarak aranıyordu ama JS köprüsü
-  bunu item'ın üzerine (`it.onSubmenuCreated`) koyuyordu ve
-  `openContextMenu` parametreyi geçirmediği için callback hiç
-  tetiklenmiyordu → panel boş, kullanıcı "playlist gözükmüyor" diyordu.
-- **Playlist kapak boyutları bozuktu.** Sidebar'daki playlist kapakları
-  28×28 olması gerekirken 80px+ görünüyor, playlist isimleri sığmıyordu;
-  playlist başlığındaki büyük kapağın placeholder'ı ise sol-üst köşede
-  duruyordu. Kök neden: `applyCoverToEl` sidebar cover elementine `.pl-cover`
-  class'ı eklemiyordu (28×28 kuralı bu class'a bağlı); `setCoverImg`
-  başlık kapağının placeholder'ını `<div class="placeholder">` yerine
-  `<span class="center-cover-placeholder">` ile değiştiriyor ama flex-center
-  CSS'i sadece eski seçicide vardı.
-- **Just Icon'dan GUI'ye dönüş iki tray ikonu bırakıyordu.** Just Icon
-  menüsünden "Boomusic'i Göster" tıklanınca yeni GUI başlıyor ama Just
-  Icon süreci çalışmaya devam ediyordu → tepside iki Boomusic ikonu.
-  Artık Just Icon süreci SIGTERM ile kendini düzgünce kapatır (lock
-  dosyası silinir, sadece tek GUI süreci + tek tray ikonu kalır).
-
-### Bağımlılık hardening
-- **yt-dlp artık her sistemde çalışır.** Önceden sadece sistem paketi
-  olarak kuruluysa çalışıyordu; minimal Fedora/Ubuntu kurulumlarında
-  depoda yoksa YouTube özelliği sessizce çalışmıyordu. Artık pip ile
-  de kuruluyor ve venv/bin/yt-dlp, ~/.local/bin/yt-dlp olarak
-  symlink'leniyor — `shutil.which("yt-dlp")` her zaman bulur.
-- **Kullanılmayan `python-xlib` bağımlılığı kaldırıldı.** Pip listesinden
-  çıkarıldı (kodda hiçbir import yoktu, sadece gereksiz sürüm çakışması
-  riski yaratıyordu).
-
-### Teknik
+- Sağ tık menü alt menüsündeki playlist listesi boş kalıyordu.
+- Playlist kapak boyutları bozuktu (sidebar büyük, başlık placeholder'ı köşede).
+- Just Icon modundan GUI'ye dönüş iki tray ikonu bırakıyordu.
+- yt-dlp artık pip ile de kuruluyor (sistem paketi yoksa).
+- Kullanılmayan `python-xlib` bağımlılığı kaldırıldı.
 - `__version__` = "1.7.3"
-- Build: `boomusic_1.7.3.tar.gz`
 
 ---
 
