@@ -96,11 +96,13 @@ class Tray:
                 logger.exception("gui.show() başarısız")
         else:
             # Just Icon modunda pencere YOK -- bu menü öğesi tıklandığında
-            # yeni bir GUI örneği başlat (kullanıcı pencereye geri dönmek
-            # istiyor). Mevcut Just Icon süreci çalışmaya devam eder; yeni
-            # GUI ayrı bir lock dosyası kullandığı için çakışma olmaz.
-            # (İsterse kullanıcı daha sonra Just Icon simgesinden 'Çıkış'
-            # seçebilir.)
+            # yeni bir GUI örneği başlat VE bu Just Icon sürecini KENDİNİ
+            # öldür. Eski davranışta Just Icon süreci çalışmaya devam
+            # ediyordu → aynı anda iki tray ikonu (Just Icon + yeni GUI'nin
+            # minimal tray'i) görünüyor, kullanıcı 'iki Boomusic' diyordu.
+            # Doğru davranış: GUI = primary; Just Icon = 'gizli mod'. Kullanıcı
+            # 'Göster' deyince gizli moddan çıkıyor; isterse sonra ayarlardan
+            # tekrar Just Icon'a geçebilir (zaten GUI açıkken kullanılabilir).
             import subprocess
             launcher = os.path.expanduser("~/.local/bin/boomusic")
             if os.path.isfile(launcher):
@@ -114,8 +116,29 @@ class Tray:
                     )
                 except Exception:
                     logger.exception("boomusic (GUI) başlatılamadı")
+                    return  # GUI başlatılamadıysa kendimizi öldürme
             else:
                 logger.error("GUI launcher bulunamadı: %s", launcher)
+                return
+            # Yeni GUI başlatıldı (lock dosyaları ayrı; GUI başlarken GUI
+            # lock zaten boştu). Şimdi kendi Just Icon sürecimizi öldür:
+            # tray ikonu + bu simgeyle gelen kontrol tamamen kaybolur, tek
+            # GUI kalır. SIGTERM atıyoruz çünkü __main__.py'deki
+            # _handle_signal lock dosyasını düzgünce siler; os._exit
+            # kullanırsak lock dosyası yerinde kalır ve sonraki başlatmada
+            # 'zaten çalışıyor' derdi çıkar.
+            try:
+                self.icon.stop()
+            except Exception:
+                pass
+            # __main__.py'deki _handle_signal SIGTERM'i yakalayıp tray'i
+            # durdurur ve lock dosyasını siler. os.kill thread-safe'dir:
+            # callback pystray'in ayrı thread'inden çalışsa bile Python
+            # sinyal handler'ı ana thread'de tetiklenir. Bu sayede temiz
+            # cleanup çalışır; os._exit ile çıkarsak lock dosyası kalır ve
+            # sonraki başlatmada 'zaten çalışıyor' derdi çıkar.
+            import signal
+            os.kill(os.getpid(), signal.SIGTERM)
 
     def _on_play_pause(self, icon, item):
         self.app.play_pause()
