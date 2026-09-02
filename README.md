@@ -16,6 +16,24 @@
 
 ---
 
+## Installation
+
+```bash
+git clone https://github.com/beratboomindev/Boomusic-The-Music-Player.git
+cd Boomusic-The-Music-Player
+bash install.sh
+```
+
+Non-interactive update:
+
+```bash
+bash update.sh
+```
+
+Pre-built releases: [Releases](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases)
+
+---
+
 ## Features
 
 - YT-dlp Support
@@ -35,23 +53,7 @@
 - Spotify Integration *(Coming Soon)*
 - Recommended for You *(Coming Soon)*
 
----
-
-## Installation
-
-```bash
-git clone https://github.com/beratboomindev/Boomusic-The-Music-Player.git
-cd Boomusic-The-Music-Player
-bash install.sh
-```
-
-Non-interactive update:
-
-```bash
-bash update.sh
-```
-
-Pre-built releases: [Releases](https://github.com/beratboomindev/Boomusic-The-Music-Player/releases)
+See **[WHATNOW.md](WHATNOW.md)** for the full roadmap.
 
 ---
 
