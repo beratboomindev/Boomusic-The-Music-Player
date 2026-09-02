@@ -232,17 +232,27 @@ if [[ -x "$VENV_DIR/bin/pip" ]]; then
     "$VENV_DIR/bin/pip" install --upgrade pip --quiet 2>/dev/null || \
         soft_fail "pip'in kendisi güncellenemedi; sorun değil, paketlere geçiyoruz." ""
 
-    info "Python paketleri kuruluyor (pystray, pillow, python-vlc, pywebview, mutagen, python-xlib)..."
+info "Python paketleri kuruluyor (pystray, pillow, python-vlc, pywebview, mutagen, yt-dlp)..."
     "$VENV_DIR/bin/pip" uninstall --quiet -y pygame pygame-ce >/dev/null 2>&1 || true
-    PIP_OUTPUT="$("$VENV_DIR/bin/pip" install pystray pillow python-vlc pywebview mutagen python-xlib 2>&1)" || PIP_RC=$?
+    PIP_OUTPUT="$("$VENV_DIR/bin/pip" install pystray pillow python-vlc pywebview mutagen yt-dlp 2>&1)" || PIP_RC=$?
     PIP_RC="${PIP_RC:-0}"
     if [[ "$PIP_RC" -eq 0 ]]; then
         ok "Python paketleri kuruldu."
     else
         soft_fail "Bazı Python paketleri kurulamadı (exit=$PIP_RC)." \
-            "$VENV_DIR/bin/pip install pystray pillow python-vlc pywebview mutagen python-xlib"
-        printf "  pip'in son çıktısı:\n"
+            "$VENV_DIR/bin/pip install pystray pillow python-vlc pywebview mutagen yt-dlp"
         printf "%s\n" "$PIP_OUTPUT" | tail -n 12 | sed 's/^/    /'
+    fi
+fi
+
+# yt-dlp güvenli fallback: sistemde yoksa pip ile kurulmuş venv/bin/yt-dlp'yi
+# ~/.local/bin/yt-dlp olarak bağla. shutil.which("yt-dlp") böylece PATH'te
+# bulabilir; YouTube özelliği 'yt-dlp bulunamadı' hatası vermez.
+if ! command -v yt-dlp >/dev/null 2>&1; then
+    if [[ -x "$VENV_DIR/bin/yt-dlp" ]]; then
+        mkdir -p "$BIN_DIR"
+        ln -sf "$VENV_DIR/bin/yt-dlp" "$BIN_DIR/yt-dlp"
+        ok "yt-dlp pip ile kuruldu ve $BIN_DIR/yt-dlp olarak bağlandı (sistem paketi yoktu)."
     fi
 fi
 

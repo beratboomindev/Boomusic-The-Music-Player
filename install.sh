@@ -298,7 +298,7 @@ if [[ -x "$VENV_DIR/bin/pip" ]]; then
     # libVLC ise formattan bağımsız doğru seek sağlıyor. Önceki bir kurulumdan kalan
     # pygame/pygame-ce varsa (çakışmasın diye) önce kaldırılır.
     "$VENV_DIR/bin/pip" uninstall --quiet -y pygame pygame-ce >/dev/null 2>&1 || true
-    PIP_OUTPUT="$("$VENV_DIR/bin/pip" install pystray pillow python-vlc pywebview mutagen python-xlib 2>&1)" || PIP_RC=$?
+    PIP_OUTPUT="$("$VENV_DIR/bin/pip" install pystray pillow python-vlc pywebview mutagen yt-dlp 2>&1)" || PIP_RC=$?
     PIP_RC="${PIP_RC:-0}"
     if [[ "$PIP_RC" -eq 0 ]]; then
         ok "Python paketleri kuruldu."
@@ -307,12 +307,25 @@ if [[ -x "$VENV_DIR/bin/pip" ]]; then
         # yakalayıp kullanıcıya gerçek sorunu gösterebilelim. Yine de gürültüyü
         # biraz azaltmak için son 12 satırı gösteriyoruz.
         soft_fail "Bazı Python paketleri kurulamadı (exit=$PIP_RC)." \
-            "$VENV_DIR/bin/pip install pystray pillow python-vlc pywebview mutagen python-xlib"
+            "$VENV_DIR/bin/pip install pystray pillow python-vlc pywebview mutagen yt-dlp"
         printf "  pip'in son çıktısı:\n"
         printf "%s\n" "$PIP_OUTPUT" | tail -n 12 | sed 's/^/    /'
         warn "Eksik paketlerle uygulama başlatıldığında ImportError alabilirsin."
         warn "Elle kurup yeniden denemek için yukarıdaki pip komutunu kullanabilirsin."
         warn "Yine de dosyaları kopyalayıp başlatıcıyı oluşturuyoruz -- geri kalan adımlar tamamlanır."
+    fi
+fi
+
+# yt-dlp için güvenli fallback: sistemde kurulu değilse (bazı minimal
+# Fedora/Ubuntu/Debian kurulumlarında depoda yoktur) pip ile venv'e
+# kurulmuş olan yt-dlp ikili dosyasını ~/.local/bin/yt-dlp olarak
+# symlink'le. shutil.which("yt-dlp") böylece PATH'te bulabilir; ayrıca
+# YouTube arama/indirme 'yt-dlp bulunamadı' hatası vermez.
+if ! command -v yt-dlp >/dev/null 2>&1; then
+    if [[ -x "$VENV_DIR/bin/yt-dlp" ]]; then
+        mkdir -p "$BIN_DIR"
+        ln -sf "$VENV_DIR/bin/yt-dlp" "$BIN_DIR/yt-dlp"
+        ok "yt-dlp pip ile kuruldu ve $BIN_DIR/yt-dlp olarak bağlandı (sistem paketi yoktu)."
     fi
 fi
 

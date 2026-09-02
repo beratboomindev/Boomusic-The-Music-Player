@@ -45,7 +45,7 @@ No doubt. **Trust the process.**
 - **YT-dlp Support** — Search, download, and play songs from YouTube directly in Boomusic.
 - **Drag-Drop Song** — Drag and drop audio files into your playlists. Manually set title and artist.
 - **Playlist Feature** — Create unlimited playlists with unlimited songs. Add custom cover images.
-- **Right-Click Context Menus** — Right-click any track to play, play next,
+- **Right-Click Context Menus** *(beta)* — Right-click any track to play, play next,
   copy its file path or YouTube link, add it to another playlist, reveal it
   in your file manager, or delete it from disk. Right-click any playlist in
   the sidebar to open, rename, shuffle-play, or delete it. Dangerous
@@ -58,10 +58,9 @@ No doubt. **Trust the process.**
 - **i18n Language Support** — Switch between English (default) and Turkish in Settings.
 - **Font Selection** — Choose between DM Sans and Anthropic Serif.
 - **Automatic Startup** — Optionally start Boomusic in the background at boot.
-- **Just Icon Mode** — Run Boomusic with no window at all. Control everything
+- **Just Icon Mode** *(beta)* — Run Boomusic with no window at all. Control everything
   from the tray icon: play/pause, next/previous, shuffle, volume presets,
-  playlists, individual tracks, and switch back to window mode. *Now
-  available (planned for 1.7.3, shipped with 1.7.2).*
+  playlists, individual tracks, and switch back to window mode.
 - **Recommended for You** — Song suggestions based on your listening habits. *(Coming Soon)*
 - **Plugins** — Community plugins to extend functionality. *(Coming Soon)*
 - **Theme Customization** — Full visual customization. *(Coming Soon)*
