@@ -1496,7 +1496,7 @@
         wrap.appendChild(panel);
         frag.appendChild(wrap);
         if (!firstPanel) firstPanel = panel;
-        if (onSubmenuCreated) onSubmenuCreated(panel);
+        if (it.onSubmenuCreated) it.onSubmenuCreated(panel);
         return;
       }
       var btn = document.createElement('button');
